@@ -7,9 +7,10 @@ export const EMAIL_STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PA
 
 // Nomi brevi dei flussi per ID scenario Make
 export const FLOW_LABELS = {
-  "6350489": "Flusso A — Audit & Email",
+  "6350489": "Flusso A1 — Audit & Email",
   "6359563": "Flusso C1 — Social Writer",
   "6363252": "Flusso C2 — Blog Writer",
+  "6446272": "Flusso A2 — Cold Outreach",
 };
 
 // Auto-refresh dei dati (minuti)
