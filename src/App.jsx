@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import {
-  RUNS_CSV_URL, FIRECRAWL_CSV_URL, EMAIL_STATS_CSV_URL,
+  RUNS_CSV_URL, FIRECRAWL_CSV_URL, EMAIL_STATS_CSV_URL, CAMPAIGNS_CSV_URL,
   FLOW_LABELS, REFRESH_MINUTES,
 } from "./config.js";
 
@@ -138,13 +138,14 @@ export default function App() {
   const [runsRaw, setRunsRaw] = useState(null);
   const [fc, setFc] = useState(null);
   const [email, setEmail] = useState(null);
+  const [camp, setCamp] = useState(null);
   const [error, setError] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
 
   const load = () => {
     setError(null);
-    Promise.all([fetchCsv(RUNS_CSV_URL), fetchCsv(FIRECRAWL_CSV_URL), fetchCsv(EMAIL_STATS_CSV_URL)])
-      .then(([r, f, e]) => { setRunsRaw(r); setFc(f); setEmail(e); setUpdatedAt(new Date()); })
+    Promise.all([fetchCsv(RUNS_CSV_URL), fetchCsv(FIRECRAWL_CSV_URL), fetchCsv(EMAIL_STATS_CSV_URL), fetchCsv(CAMPAIGNS_CSV_URL)])
+      .then(([r, f, e, c]) => { setRunsRaw(r); setFc(f); setEmail(e); setCamp(c); setUpdatedAt(new Date()); })
       .catch((e) => setError(String(e)));
   };
   useEffect(() => { load(); const t = setInterval(load, REFRESH_MINUTES * 60000); return () => clearInterval(t); }, []);
@@ -205,6 +206,20 @@ export default function App() {
     return { remaining: last.v, plan: parseInt(fc[fc.length - 1].plan_credits, 10) || null, burnPerDay: burn, periodEnd: fc[fc.length - 1].billing_period_end };
   }, [fc]);
 
+  // Campaigns: righe { logged_at, list_active, list_unsub, list_bounce } — ultima lettura + trend attivi
+  const campAgg = useMemo(() => {
+    if (!camp || !camp.length) return null;
+    const rows = camp.filter((r) => r.logged_at).sort((a, b) => (a.logged_at || "").localeCompare(b.logged_at || ""));
+    if (!rows.length) return null;
+    const last = rows[rows.length - 1];
+    const num = (v) => parseInt(v, 10) || 0;
+    const days = lastNDays(14).map((k) => {
+      const dayRows = rows.filter((r) => dayKey(r.logged_at) === k);
+      return { k, v: dayRows.length ? num(dayRows[dayRows.length - 1].list_active) : 0 };
+    });
+    return { active: num(last.list_active), unsub: num(last.list_unsub), bounce: num(last.list_bounce), at: last.logged_at, days };
+  }, [camp]);
+
   const totRate = totals.runs ? Math.round((totals.ok / totals.runs) * 100) : null;
   const configured = RUNS_CSV_URL && !RUNS_CSV_URL.startsWith("INCOLLA");
 
@@ -249,9 +264,39 @@ export default function App() {
               {fcAgg && <Kpi dark label="Crediti Firecrawl" value={fcAgg.remaining} sub={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/giorno` : "consumo n/d"} />}
             </div>
 
-            {/* Card flussi */}
+            {/* Card flussi + lista Campaigns */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 18 }}>
               {Object.keys(FLOW_LABELS).map((id) => byFlow[id] ? <FlowCard key={id} flowId={id} runs={byFlow[id]} /> : null)}
+              <Panel>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontFamily: T.sans, fontWeight: 600, fontSize: 15, color: T.ink }}>Campaigns — lista Cold Outreach</div>
+                    <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>
+                      ultima lettura {campAgg ? fmtWhen(campAgg.at) : "—"}
+                    </div>
+                  </div>
+                  {campAgg && (
+                    <span style={{ fontFamily: T.mono, fontSize: 11, padding: "3px 8px", borderRadius: 99, background: T.accentSoft, color: T.accent, whiteSpace: "nowrap" }}>
+                      Zoho Campaigns
+                    </span>
+                  )}
+                </div>
+                {campAgg ? (
+                  <>
+                    <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
+                      <Kpi label="Iscritti attivi" value={campAgg.active} color={T.ok} />
+                      <Kpi label="Disiscritti" value={campAgg.unsub} color={campAgg.unsub ? T.warn : T.ink} />
+                      <Kpi label="Bounce" value={campAgg.bounce} color={campAgg.bounce ? T.err : T.ink} />
+                    </div>
+                    <SectionLabel>Iscritti attivi (14 gg)</SectionLabel>
+                    <DayBars series={campAgg.days} color={T.ok} unit="attivi" />
+                  </>
+                ) : (
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>
+                    In attesa delle prime letture del collector K3 o dell'URL del tab campaigns.
+                  </div>
+                )}
+              </Panel>
             </div>
 
             {/* Deliverability + Firecrawl */}
@@ -300,7 +345,7 @@ export default function App() {
             </div>
 
             <footer style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 24, textAlign: "center" }}>
-              Dati: Google Sheet «AISA - KPI Log» (tab pubblicati runs / firecrawl / email_stats) · dedup per execution_id · Kleecks internal
+              Dati: Google Sheet «AISA - KPI Log» (tab pubblicati runs / firecrawl / email_stats / campaigns) · dedup per execution_id · Kleecks internal
             </footer>
           </>
         )}
