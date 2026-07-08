@@ -228,11 +228,18 @@ export default function App() {
       <div style={{ maxWidth: 1020, margin: "0 auto" }}>
 
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 22 }}>
-          <div>
-            <div style={{ fontFamily: T.mono, fontSize: 11, color: T.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>AISA · Make.com · ZeptoMail · Firecrawl</div>
-            <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em" }}>KPI dei flussi di automazione</h1>
-            <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-              {updatedAt ? `Aggiornato alle ${updatedAt.toLocaleTimeString("it-IT")} · refresh ogni ${REFRESH_MINUTES} min` : "Caricamento…"}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
+            <img
+              src="https://www.aisearchaudit.ai/wp-content/uploads/2026/07/ai-search-audit-logo-no-tagline.png"
+              alt="AI Search Audit"
+              style={{ height: 44, width: "auto", display: "block" }}
+            />
+            <div>
+              <div style={{ fontFamily: T.mono, fontSize: 11, color: T.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>AISA · Make.com · ZeptoMail · Campaigns · Firecrawl</div>
+              <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em" }}>KPI dei flussi di automazione</h1>
+              <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
+                {updatedAt ? `Aggiornato alle ${updatedAt.toLocaleTimeString("it-IT")} · refresh ogni ${REFRESH_MINUTES} min` : "Caricamento…"}
+              </div>
             </div>
           </div>
           <button onClick={load} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", cursor: "pointer" }}>
@@ -255,13 +262,42 @@ export default function App() {
         {configured && runs.length > 0 && (
           <>
             {/* Banda aggregata */}
-            <div style={{ display: "flex", gap: 28, flexWrap: "wrap", background: T.ink, borderRadius: 10, padding: "16px 20px", marginBottom: 18 }}>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "stretch", background: T.ink, borderRadius: 10, padding: "16px 20px", marginBottom: 18 }}>
               <Kpi dark label="Run totali" value={totals.runs} />
               <Kpi dark label="Successo" value={totRate == null ? "—" : `${totRate}%`} color={totRate >= 90 ? "#5BE3B8" : "#F0908A"} sub={`${totals.err} errori`} />
               <Kpi dark label="Operazioni Make" value={totals.ops} />
-              {emailAgg && <Kpi dark label="Aperture email" value={emailAgg.opens} sub={`${emailAgg.clicks} click`} />}
-              {emailAgg && <Kpi dark label="Bounce" value={emailAgg.bounces} color={emailAgg.bounces ? "#F5C97B" : "#5BE3B8"} />}
-              {fcAgg && <Kpi dark label="Crediti Firecrawl" value={fcAgg.remaining} sub={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/giorno` : "consumo n/d"} />}
+
+              {/* Gruppo email A1 — Webhook (ZeptoMail) */}
+              {emailAgg && (
+                <div style={{ display: "flex", gap: 20, paddingLeft: 20, borderLeft: "1px solid #2A3038" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontFamily: T.sans, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7C8894", fontWeight: 600 }}>A1 — Webhook</div>
+                    <div style={{ display: "flex", gap: 20 }}>
+                      <Kpi dark label="Aperture email" value={emailAgg.opens} sub={`${emailAgg.clicks} click`} />
+                      <Kpi dark label="Bounce" value={emailAgg.bounces} color={emailAgg.bounces ? "#F5C97B" : "#5BE3B8"} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Gruppo email A2 — Cold Outreach (Campaigns) */}
+              {campAgg && (
+                <div style={{ display: "flex", gap: 20, paddingLeft: 20, borderLeft: "1px solid #2A3038" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontFamily: T.sans, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7C8894", fontWeight: 600 }}>A2 — Cold Outreach</div>
+                    <div style={{ display: "flex", gap: 20 }}>
+                      <Kpi dark label="Email inviate" value={campAgg.active + campAgg.unsub} sub={`${campAgg.active} iscritti`} />
+                      <Kpi dark label="Bounce" value={campAgg.bounce} color={campAgg.bounce ? "#F5C97B" : "#5BE3B8"} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {fcAgg && (
+                <div style={{ display: "flex", gap: 20, paddingLeft: 20, borderLeft: "1px solid #2A3038" }}>
+                  <Kpi dark label="Crediti Firecrawl" value={fcAgg.remaining} sub={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/giorno` : "consumo n/d"} />
+                </div>
+              )}
             </div>
 
             {/* Card flussi + lista Campaigns */}
