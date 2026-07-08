@@ -38,7 +38,7 @@ const lastNDays = (n) => {
 const fmtWhen = (iso) => {
   if (!iso) return "—";
   const d = new Date(iso);
-  return isNaN(d) ? iso : d.toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return isNaN(d) ? iso : d.toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 };
 
 // ---- Componenti base --------------------------------------------------
@@ -52,12 +52,12 @@ function Kpi({ label, value, sub, color, dark }) {
   );
 }
 
-// Elemento firma: striscia esecuzioni, dal più vecchio al più recente
+// Signature element: run strip, oldest to newest
 function RunStrip({ runs }) {
-  if (!runs.length) return <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>nessuna esecuzione registrata</div>;
+  if (!runs.length) return <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>no runs recorded</div>;
   const strip = runs.slice(-24);
   return (
-    <div style={{ display: "flex", gap: 3, alignItems: "flex-end" }} aria-label="Esito ultime esecuzioni">
+    <div style={{ display: "flex", gap: 3, alignItems: "flex-end" }} aria-label="Recent run outcomes">
       {strip.map((r, i) => (
         <div key={r.execution_id || i}
           title={`${fmtWhen(r.started_at)} · ${r.status} · ${fmtDur(r.duration_s)}`}
@@ -110,24 +110,24 @@ function FlowCard({ flowId, runs }) {
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
         <div>
           <div style={{ fontFamily: T.sans, fontWeight: 600, fontSize: 15, color: T.ink }}>{FLOW_LABELS[flowId] || `Scenario ${flowId}`}</div>
-          <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>ultima run {last ? fmtWhen(last.started_at) : "—"}</div>
+          <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>last run {last ? fmtWhen(last.started_at) : "—"}</div>
         </div>
         {last && (
           <span style={{ fontFamily: T.mono, fontSize: 11, padding: "3px 8px", borderRadius: 99, background: last.status === "success" ? T.okSoft : T.errSoft, color: last.status === "success" ? T.ok : T.err, whiteSpace: "nowrap" }}>
-            {last.status === "success" ? "ultima: ok" : "ultima: errore"}
+            {last.status === "success" ? "last: ok" : "last: error"}
           </span>
         )}
       </div>
       <div style={{ marginBottom: 12 }}>
-        <SectionLabel>Ultime esecuzioni</SectionLabel>
+        <SectionLabel>Recent runs</SectionLabel>
         <RunStrip runs={runs} />
       </div>
       <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
-        <Kpi label="Run" value={runs.length} />
-        <Kpi label="Successo" value={rate == null ? "—" : `${rate}%`} color={rate == null ? T.ink : rate >= 90 ? T.ok : T.err} sub={`${err.length} errori`} />
-        <Kpi label="Durata media" value={fmtDur(avgD)} />
+        <Kpi label="Runs" value={runs.length} />
+        <Kpi label="Success" value={rate == null ? "—" : `${rate}%`} color={rate == null ? T.ink : rate >= 90 ? T.ok : T.err} sub={`${err.length} errors`} />
+        <Kpi label="Avg. duration" value={fmtDur(avgD)} />
       </div>
-      <SectionLabel>Run per giorno (14 gg)</SectionLabel>
+      <SectionLabel>Runs per day (14 days)</SectionLabel>
       <DayBars series={days} />
     </Panel>
   );
@@ -195,7 +195,7 @@ export default function App() {
     return { opens: sum(["open"]), clicks: sum(["click"]), bounces: sum(["bounce"]), bounceTypes, bounceDays: days };
   }, [email]);
 
-  // Firecrawl: ultima lettura + consumo medio/giorno dai delta
+  // Firecrawl: latest reading + average daily burn from deltas
   const fcAgg = useMemo(() => {
     if (!fc || !fc.length) return null;
     const rows = fc.filter((r) => r.remaining_credits).map((r) => ({ t: r.logged_at, v: parseInt(r.remaining_credits, 10) })).sort((a, b) => a.t.localeCompare(b.t));
@@ -206,7 +206,7 @@ export default function App() {
     return { remaining: last.v, plan: parseInt(fc[fc.length - 1].plan_credits, 10) || null, burnPerDay: burn, periodEnd: fc[fc.length - 1].billing_period_end };
   }, [fc]);
 
-  // Campaigns: righe { logged_at, list_active, list_unsub, list_bounce } — ultima lettura + trend attivi
+  // Campaigns: rows { logged_at, list_active, list_unsub, list_bounce } — latest reading + active trend
   const campAgg = useMemo(() => {
     if (!camp || !camp.length) return null;
     const rows = camp.filter((r) => r.logged_at).sort((a, b) => (a.logged_at || "").localeCompare(b.logged_at || ""));
@@ -236,58 +236,58 @@ export default function App() {
             />
             <div>
               <div style={{ fontFamily: T.mono, fontSize: 11, color: T.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>AISA · Make.com · ZeptoMail · Campaigns · Firecrawl</div>
-              <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em" }}>KPI dei flussi di automazione</h1>
+              <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em" }}>Automation flows — KPI dashboard</h1>
               <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                {updatedAt ? `Aggiornato alle ${updatedAt.toLocaleTimeString("it-IT")} · refresh ogni ${REFRESH_MINUTES} min` : "Caricamento…"}
+                {updatedAt ? `Updated at ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}
               </div>
             </div>
           </div>
           <button onClick={load} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", cursor: "pointer" }}>
-            Aggiorna adesso
+            Refresh now
           </button>
         </header>
 
         {!configured && (
           <Panel style={{ borderStyle: "dashed", textAlign: "center", color: T.inkSoft }}>
-            Configura gli URL CSV in <code style={{ fontFamily: T.mono }}>src/config.js</code> — istruzioni nel README.
+            Configure the CSV URLs in <code style={{ fontFamily: T.mono }}>src/config.js</code> — see the README for instructions.
           </Panel>
         )}
 
         {error && (
           <div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>
-            Errore nel caricamento dati: {error}. Verifica che i tab del foglio siano pubblicati sul web.
+            Error loading data: {error}. Check that the sheet tabs are published to the web.
           </div>
         )}
 
         {configured && runs.length > 0 && (
           <>
-            {/* Banda aggregata */}
+            {/* Aggregate band */}
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "stretch", background: T.ink, borderRadius: 10, padding: "16px 20px", marginBottom: 18 }}>
-              <Kpi dark label="Run totali" value={totals.runs} />
-              <Kpi dark label="Successo" value={totRate == null ? "—" : `${totRate}%`} color={totRate >= 90 ? "#5BE3B8" : "#F0908A"} sub={`${totals.err} errori`} />
-              <Kpi dark label="Operazioni Make" value={totals.ops} />
+              <Kpi dark label="Total runs" value={totals.runs} />
+              <Kpi dark label="Success" value={totRate == null ? "—" : `${totRate}%`} color={totRate >= 90 ? "#5BE3B8" : "#F0908A"} sub={`${totals.err} errors`} />
+              <Kpi dark label="Make operations" value={totals.ops} />
 
-              {/* Gruppo email A1 — Webhook (ZeptoMail) */}
+              {/* Email group A1 — Webhook (ZeptoMail) */}
               {emailAgg && (
                 <div style={{ display: "flex", gap: 20, paddingLeft: 20, borderLeft: "1px solid #2A3038" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ fontFamily: T.sans, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7C8894", fontWeight: 600 }}>A1 — Webhook</div>
                     <div style={{ display: "flex", gap: 20 }}>
-                      <Kpi dark label="Aperture email" value={emailAgg.opens} sub={`${emailAgg.clicks} click`} />
-                      <Kpi dark label="Bounce" value={emailAgg.bounces} color={emailAgg.bounces ? "#F5C97B" : "#5BE3B8"} />
+                      <Kpi dark label="Email opens" value={emailAgg.opens} sub={`${emailAgg.clicks} clicks`} />
+                      <Kpi dark label="Bounces" value={emailAgg.bounces} color={emailAgg.bounces ? "#F5C97B" : "#5BE3B8"} />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Gruppo email A2 — Cold Outreach (Campaigns) */}
+              {/* Email group A2 — Cold Outreach (Campaigns) */}
               {campAgg && (
                 <div style={{ display: "flex", gap: 20, paddingLeft: 20, borderLeft: "1px solid #2A3038" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ fontFamily: T.sans, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7C8894", fontWeight: 600 }}>A2 — Cold Outreach</div>
                     <div style={{ display: "flex", gap: 20 }}>
-                      <Kpi dark label="Email inviate" value={campAgg.active + campAgg.unsub} sub={`${campAgg.active} iscritti`} />
-                      <Kpi dark label="Bounce" value={campAgg.bounce} color={campAgg.bounce ? "#F5C97B" : "#5BE3B8"} />
+                      <Kpi dark label="Emails sent" value={campAgg.active + campAgg.unsub} sub={`${campAgg.active} subscribers`} />
+                      <Kpi dark label="Bounces" value={campAgg.bounce} color={campAgg.bounce ? "#F5C97B" : "#5BE3B8"} />
                     </div>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export default function App() {
 
               {fcAgg && (
                 <div style={{ display: "flex", gap: 20, paddingLeft: 20, borderLeft: "1px solid #2A3038" }}>
-                  <Kpi dark label="Crediti Firecrawl" value={fcAgg.remaining} sub={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/giorno` : "consumo n/d"} />
+                  <Kpi dark label="Firecrawl credits" value={fcAgg.remaining} sub={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/day` : "burn n/a"} />
                 </div>
               )}
             </div>
@@ -306,9 +306,9 @@ export default function App() {
               <Panel>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
                   <div>
-                    <div style={{ fontFamily: T.sans, fontWeight: 600, fontSize: 15, color: T.ink }}>Campaigns — lista Cold Outreach</div>
+                    <div style={{ fontFamily: T.sans, fontWeight: 600, fontSize: 15, color: T.ink }}>Campaigns — Cold Outreach list</div>
                     <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>
-                      ultima lettura {campAgg ? fmtWhen(campAgg.at) : "—"}
+                      last reading {campAgg ? fmtWhen(campAgg.at) : "—"}
                     </div>
                   </div>
                   {campAgg && (
@@ -320,16 +320,19 @@ export default function App() {
                 {campAgg ? (
                   <>
                     <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
-                      <Kpi label="Iscritti attivi" value={campAgg.active} color={T.ok} />
-                      <Kpi label="Disiscritti" value={campAgg.unsub} color={campAgg.unsub ? T.warn : T.ink} />
-                      <Kpi label="Bounce" value={campAgg.bounce} color={campAgg.bounce ? T.err : T.ink} />
+                      <Kpi label="Active subscribers" value={campAgg.active} color={T.ok} />
+                      <Kpi label="Unsubscribed" value={campAgg.unsub} color={campAgg.unsub ? T.warn : T.ink} />
+                      <Kpi label="Bounces" value={campAgg.bounce} color={campAgg.bounce ? T.err : T.ink} />
                     </div>
-                    <SectionLabel>Iscritti attivi (14 gg)</SectionLabel>
-                    <DayBars series={campAgg.days} color={T.ok} unit="attivi" />
+                    <SectionLabel>Active subscribers (14 days)</SectionLabel>
+                    <DayBars series={campAgg.days} color={T.ok} unit="active" />
+                    <div style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 12, lineHeight: 1.5, borderTop: `1px solid ${T.line}`, paddingTop: 10 }}>
+                      Note: the send totals in Zoho Campaigns' own reports may be higher than the figures shown here. Campaigns counts every historical send of the campaign — including pre-launch tests and any contacts later removed from the list — whereas this dashboard reflects the current state of the list (active subscribers + unsubscribed).
+                    </div>
                   </>
                 ) : (
                   <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>
-                    In attesa delle prime letture del collector K3 o dell'URL del tab campaigns.
+                    Awaiting the first readings from the K3 collector, or the campaigns tab URL.
                   </div>
                 )}
               </Panel>
@@ -338,13 +341,13 @@ export default function App() {
             {/* Deliverability + Firecrawl */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
               <Panel>
-                <SectionLabel>Email · deliverability (aggregati, nessun dato personale)</SectionLabel>
+                <SectionLabel>Email · deliverability (aggregated, no personal data)</SectionLabel>
                 {emailAgg ? (
                   <>
                     <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
-                      <Kpi label="Aperture" value={emailAgg.opens} />
-                      <Kpi label="Click" value={emailAgg.clicks} />
-                      <Kpi label="Bounce" value={emailAgg.bounces} color={emailAgg.bounces ? T.warn : T.ok} />
+                      <Kpi label="Opens" value={emailAgg.opens} />
+                      <Kpi label="Clicks" value={emailAgg.clicks} />
+                      <Kpi label="Bounces" value={emailAgg.bounces} color={emailAgg.bounces ? T.warn : T.ok} />
                     </div>
                     {Object.keys(emailAgg.bounceTypes).length > 0 && (
                       <div style={{ marginBottom: 12 }}>
@@ -353,35 +356,35 @@ export default function App() {
                         ))}
                       </div>
                     )}
-                    <SectionLabel>Bounce per giorno (14 gg)</SectionLabel>
-                    <DayBars series={emailAgg.bounceDays} color={T.warn} unit="bounce" />
+                    <SectionLabel>Bounces per day (14 days)</SectionLabel>
+                    <DayBars series={emailAgg.bounceDays} color={T.warn} unit="bounces" />
                   </>
                 ) : (
-                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>In attesa dei primi eventi ZeptoMail o dell'URL del tab email_stats.</div>
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>Awaiting the first ZeptoMail events, or the email_stats tab URL.</div>
                 )}
               </Panel>
               <Panel>
-                <SectionLabel>Firecrawl · crediti</SectionLabel>
+                <SectionLabel>Firecrawl · credits</SectionLabel>
                 {fcAgg ? (
                   <>
                     <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
-                      <Kpi label="Residui" value={fcAgg.remaining} />
-                      {fcAgg.plan && <Kpi label="Piano" value={fcAgg.plan} />}
-                      <Kpi label="Consumo" value={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/gg` : "n/d"} />
+                      <Kpi label="Remaining" value={fcAgg.remaining} />
+                      {fcAgg.plan && <Kpi label="Plan" value={fcAgg.plan} />}
+                      <Kpi label="Burn" value={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/day` : "n/a"} />
                     </div>
                     <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>
-                      Rinnovo periodo: {fcAgg.periodEnd ? fcAgg.periodEnd.slice(0, 10) : "—"}
-                      {fcAgg.burnPerDay > 0 && ` · autonomia stimata ~${Math.floor(fcAgg.remaining / fcAgg.burnPerDay)} giorni`}
+                      Period renews: {fcAgg.periodEnd ? fcAgg.periodEnd.slice(0, 10) : "—"}
+                      {fcAgg.burnPerDay > 0 && ` · estimated autonomy ~${Math.floor(fcAgg.remaining / fcAgg.burnPerDay)} days`}
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>In attesa delle prime letture del collector K1.</div>
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>Awaiting the first readings from the K1 collector.</div>
                 )}
               </Panel>
             </div>
 
             <footer style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 24, textAlign: "center" }}>
-              Dati: Google Sheet «AISA - KPI Log» (tab pubblicati runs / firecrawl / email_stats / campaigns) · dedup per execution_id · Kleecks internal
+              Data: Google Sheet «AISA - KPI Log» (published tabs runs / firecrawl / email_stats / campaigns) · deduplicated by execution_id · Kleecks internal
             </footer>
           </>
         )}
