@@ -39,12 +39,13 @@ export const FLOWS = [
   { code: "D2", family: "D", name: "Not yet available", placeholder: true },
 ];
 
-// Service flows (K collectors + MD) — shown in the service strip
+// Service flows (K collectors + MD) — shown in the service strip.
+// status is fixed here (these scenarios do not log their own runs to the KPI sheet).
 export const SERVICE_FLOWS = [
-  { code: "K1", name: "KPI collector (Make + Firecrawl)", scenarioId: "6441414", makeUrl: `${MAKE_BASE}/6441414/edit` },
-  { code: "K2", name: "ZeptoMail events → KPI Log",       scenarioId: "6441412", makeUrl: `${MAKE_BASE}/6441412/edit` },
-  { code: "K3", name: "Campaigns stats collector",        scenarioId: "6448767", makeUrl: `${MAKE_BASE}/6448767/edit` },
-  { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", makeUrl: `${MAKE_BASE}/6440510/edit` },
+  { code: "K1", name: "KPI collector (Make + Firecrawl)", status: "active",  scenarioId: "6441414", makeUrl: `${MAKE_BASE}/6441414/edit` },
+  { code: "K2", name: "ZeptoMail events → KPI Log",       status: "active",  scenarioId: "6441412", makeUrl: `${MAKE_BASE}/6441412/edit` },
+  { code: "K3", name: "Campaigns stats collector",        status: "active",  scenarioId: "6448767", makeUrl: `${MAKE_BASE}/6448767/edit` },
+  { code: "MD", name: "Markdown consolidator",            status: "standby", scenarioId: "6440510", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
 
 // Family colours (border + accent). Green & pink from the AISA logo.

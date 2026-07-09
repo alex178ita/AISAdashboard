@@ -269,19 +269,13 @@ export default function App() {
           <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
               {SERVICE_FLOWS.map(sf => {
-                const st = statsFor(runs, sf.scenarioId);
                 return (
                   <div key={sf.code} style={{ border: `1px solid ${T.line}`, borderRadius: 9, padding: "11px 13px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: FAMILY.S.color }}>{sf.code}</span>
-                      <StatusDot status={st ? "active" : "standby"} />
+                      <StatusDot status={sf.status || "standby"} />
                     </div>
                     <div style={{ fontFamily: T.sans, fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 8 }}>{sf.name}</div>
-                    <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
-                      <Metric label="Runs" value={st ? st.total : "—"} />
-                      <Metric label="Success" value={st ? (st.rate == null ? "—" : `${st.rate}%`) : "—"} color={st && st.rate >= 90 ? T.ok : undefined} />
-                      <Metric label="Last" value={st ? fmtWhen(st.last?.started_at) : "—"} />
-                    </div>
                     {sf.code === "K1" && fcAgg && (<div style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginBottom: 8 }}>Firecrawl: {fcAgg.remaining} credits{fcAgg.burn ? ` · ~${fcAgg.burn.toFixed(0)}/day` : ""}</div>)}
                     <a href={sf.makeUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.sans, fontSize: 11, fontWeight: 600, color: FAMILY.S.color, textDecoration: "none" }}>See make.com {sf.code} flow<LinkIcon /></a>
                   </div>
