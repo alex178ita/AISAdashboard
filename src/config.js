@@ -26,14 +26,14 @@ export const LINKS = {
 // family drives the colour; scenarioId links to Make; status: active | standby | invalid | soon
 export const FLOWS = [
   // Family A — AISA audit & outreach (green)
-  { code: "A1", family: "A", name: "Webhook — audit upon sign-up",    scenarioId: "6350489", makeUrl: `${MAKE_BASE}/6350489/edit`, detail: { label: "See details in ZeptoMail", url: "zeptomailReport" } },
-  { code: "A2", family: "A", name: "Cold outreach email",             scenarioId: "6446272", makeUrl: `${MAKE_BASE}/6446272/edit`, detail: { label: "See details in Zoho Campaigns", url: "campaignsReport" } },
+  { code: "A1", family: "A", name: "Webhook — audit upon sign-up",    scenarioId: "6350489", status: "standby", makeUrl: `${MAKE_BASE}/6350489/edit`, detail: { label: "See details in ZeptoMail", url: "zeptomailReport" } },
+  { code: "A2", family: "A", name: "Cold outreach email",             scenarioId: "6446272", status: "active", makeUrl: `${MAKE_BASE}/6446272/edit`, detail: { label: "See details in Zoho Campaigns", url: "campaignsReport" } },
   // Family B — not yet available (pink)
   { code: "B1", family: "B", name: "Not yet available", placeholder: true },
   { code: "B2", family: "B", name: "Not yet available", placeholder: true },
   // Family C — content generation (indigo)
-  { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", makeUrl: `${MAKE_BASE}/6359563/edit` },
-  { code: "C2", family: "C", name: "Blog writer → WordPress",         scenarioId: "6363252", makeUrl: `${MAKE_BASE}/6363252/edit` },
+  { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", status: "invalid", makeUrl: `${MAKE_BASE}/6359563/edit` },
+  { code: "C2", family: "C", name: "Blog writer → WordPress",         scenarioId: "6363252", status: "standby", makeUrl: `${MAKE_BASE}/6363252/edit` },
   // Family D — not yet available (amber)
   { code: "D1", family: "D", name: "Not yet available", placeholder: true },
   { code: "D2", family: "D", name: "Not yet available", placeholder: true },
@@ -41,10 +41,10 @@ export const FLOWS = [
 
 // Service flows (K collectors + MD) — shown in the service strip
 export const SERVICE_FLOWS = [
-  { code: "K1", name: "KPI collector (Make + Firecrawl)", scenarioId: "6441414", makeUrl: `${MAKE_BASE}/6441414/edit` },
-  { code: "K2", name: "ZeptoMail events → KPI Log",       scenarioId: "6441412", makeUrl: `${MAKE_BASE}/6441412/edit` },
-  { code: "K3", name: "Campaigns stats collector",        scenarioId: "6448767", makeUrl: `${MAKE_BASE}/6448767/edit` },
-  { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", makeUrl: `${MAKE_BASE}/6440510/edit` },
+  { code: "K1", name: "KPI collector (Make + Firecrawl)", scenarioId: "6441414", status: "active", makeUrl: `${MAKE_BASE}/6441414/edit` },
+  { code: "K2", name: "ZeptoMail events → KPI Log",       scenarioId: "6441412", status: "active", makeUrl: `${MAKE_BASE}/6441412/edit` },
+  { code: "K3", name: "Campaigns stats collector",        scenarioId: "6448767", status: "active", makeUrl: `${MAKE_BASE}/6448767/edit` },
+  { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", status: "standby", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
 
 // Family colours (border + accent). Green & pink from the AISA logo.

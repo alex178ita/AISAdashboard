@@ -156,10 +156,11 @@ export default function App() {
 
   const emailAgg = useMemo(() => {
     if (!emailStats.length) return null;
-    let opens = 0, clicks = 0, bounces = 0;
+    let sent = 0, opens = 0, clicks = 0, bounces = 0;
     emailStats.forEach(e => { const t = (e.event_type || "").toLowerCase(); const n = num(e.count) || 1;
-      if (t.includes("open")) opens += n; else if (t.includes("click")) clicks += n; else if (t.includes("bounce")) bounces += n; });
-    return { opens, clicks, bounces };
+      if (t.includes("deliver") || t === "sent" || t.includes("email_sent")) sent += n;
+      else if (t.includes("open")) opens += n; else if (t.includes("click")) clicks += n; else if (t.includes("bounce")) bounces += n; });
+    return { sent, opens, clicks, bounces };
   }, [emailStats]);
 
   const campAgg = useMemo(() => {
@@ -176,8 +177,15 @@ export default function App() {
 
   const fcAgg = useMemo(() => {
     if (!firecrawl.length) return null;
-    const last = [...firecrawl].sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0] || {};
-    return { remaining: num(last.credits_remaining), burn: num(last.burn_per_day) };
+    const rows = firecrawl
+      .filter(r => r.remaining_credits !== undefined && r.remaining_credits !== "")
+      .map(r => ({ t: r.logged_at, v: num(r.remaining_credits), plan: num(r.plan_credits), end: r.billing_period_end }))
+      .sort((a, b) => new Date(a.t) - new Date(b.t));
+    if (!rows.length) return null;
+    const last = rows[rows.length - 1], first = rows[0];
+    const daysSpan = Math.max(1, (new Date(last.t) - new Date(first.t)) / 86400000);
+    const burn = Math.max(0, first.v - last.v) / daysSpan;
+    return { remaining: last.v, plan: last.plan, burn, end: last.end };
   }, [firecrawl]);
 
   function metricsForFlow(flow) {
@@ -200,6 +208,7 @@ export default function App() {
       else { base.push({ label: "Opened", value: "—", sub: "see Campaigns report" }); }
     }
     if (flow.code === "A1" && emailAgg) {
+      base.push({ label: "Emails sent", value: emailAgg.sent, color: T.accent });
       base.push({ label: "Opened", value: emailAgg.opens, sub: `${emailAgg.clicks} clicks` });
       base.push({ label: "Bounces", value: emailAgg.bounces, color: emailAgg.bounces ? T.warn : T.ink });
     }
@@ -226,10 +235,12 @@ export default function App() {
 
         {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
-        <div style={{ background: T.ink, borderRadius: 12, padding: "14px 20px", marginBottom: 18, display: "flex", gap: 30, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894" }}>Active Make.com flows</div>
-          <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runs, "6350489")} />
-          <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runs, "6446272")} />
+        <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
+          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "center", marginBottom: 14 }}>Active Make.com flows</div>
+          <div style={{ display: "flex", gap: 30, flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+            <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runs, "6350489")} />
+            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runs, "6446272")} />
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
