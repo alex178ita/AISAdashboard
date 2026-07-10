@@ -10,14 +10,6 @@ export const CAMPAIGNS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX
 // Publish the query table as CSV in Zoho Analytics and paste the URL here.
 export const A2_ENGAGEMENT_CSV_URL = ""; // <-- paste the published Analytics CSV URL
 
-// Short labels per Make scenario ID — used by the flow cards.
-export const FLOW_LABELS = {
-  "6350489": "Flow A1 — Audit & Email",
-  "6446272": "Flow A2 — Cold Outreach",
-  "6359563": "Flow C1 — Social Writer",
-  "6363252": "Flow C2 — Blog Writer",
-};
-
 // Auto-refresh (minutes)
 export const REFRESH_MINUTES = 5;
 
