@@ -1,291 +1,359 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Papa from "papaparse";
 import {
   RUNS_CSV_URL, FIRECRAWL_CSV_URL, EMAIL_STATS_CSV_URL, CAMPAIGNS_CSV_URL,
-  A2_ENGAGEMENT_CSV_URL, REFRESH_MINUTES, LINKS, FLOWS, SERVICE_FLOWS, FAMILY,
+  FLOW_LABELS, REFRESH_MINUTES,
 } from "./config.js";
 
+// ---- Token di design -------------------------------------------------
 const T = {
-  sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
-  bg: "#F6F7F9", ink: "#12151A", inkSoft: "#6A7280", line: "#E6E9ED", card: "#FFFFFF",
-  accent: "#2FB980", ok: "#1FA971", okSoft: "#E4F6EE", warn: "#C97A1C", warnSoft: "#FBF0E1",
-  err: "#D4544E", errSoft: "#FBE9E8",
-};
-const STATUS = {
-  active:  { dot: "#1FA971", label: "active" },
-  standby: { dot: "#C9A227", label: "standby" },
-  invalid: { dot: "#D4544E", label: "needs attention" },
-  soon:    { dot: "#B4BAC4", label: "not yet available" },
+  bg: "#F7F8F6", panel: "#FFFFFF", ink: "#14181C", inkSoft: "#5B6570",
+  line: "#E3E7E4", ok: "#0E8A6D", okSoft: "#DFF2EC", err: "#C4372F",
+  errSoft: "#F9E4E2", warn: "#B7791F", warnSoft: "#FBF0DC",
+  accent: "#2547E0", accentSoft: "#E7EBFC",
+  mono: "'IBM Plex Mono', ui-monospace, monospace",
+  sans: "'Inter', system-ui, sans-serif",
 };
 
-function parseCSV(text) {
-  const rows = []; let row = [], val = "", q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (q) { if (c === '"' && text[i + 1] === '"') { val += '"'; i++; } else if (c === '"') q = false; else val += c; }
-    else { if (c === '"') q = true; else if (c === ",") { row.push(val); val = ""; } else if (c === "\n") { row.push(val); rows.push(row); row = []; val = ""; } else if (c === "\r") {} else val += c; }
+// ---- Utilità ----------------------------------------------------------
+const fetchCsv = (url) =>
+  new Promise((resolve, reject) => {
+    if (!url || url.startsWith("INCOLLA")) return resolve(null);
+    Papa.parse(url, {
+      download: true, header: true, skipEmptyLines: true,
+      complete: (r) => resolve(r.data), error: reject,
+    });
+  });
+
+const fmtDur = (s) => (s == null || isNaN(s) ? "—" : s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`);
+const dayKey = (iso) => (iso || "").slice(0, 10);
+const lastNDays = (n) => {
+  const out = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    out.push(d.toISOString().slice(0, 10));
   }
-  if (val.length || row.length) { row.push(val); rows.push(row); }
-  const header = (rows.shift() || []).map(h => h.trim());
-  return rows.filter(r => r.some(c => c !== "")).map(r => { const o = {}; header.forEach((h, i) => (o[h] = (r[i] ?? "").trim())); return o; });
-}
-async function fetchCSV(url) { if (!url) return []; const res = await fetch(url); if (!res.ok) throw new Error(`HTTP ${res.status}`); return parseCSV(await res.text()); }
+  return out;
+};
+const fmtWhen = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
 
-const num = v => { const n = parseFloat(String(v ?? "").replace(/[^\d.-]/g, "")); return isNaN(n) ? 0 : n; };
-const fmtWhen = iso => { if (!iso) return "—"; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
-const fmtDur = s => { s = Math.round(s); if (!s) return "—"; const m = Math.floor(s / 60), r = s % 60; return m ? `${m}m ${r}s` : `${r}s`; };
-
-function Metric({ label, value, sub, color }) {
+// ---- Componenti base --------------------------------------------------
+function Kpi({ label, value, sub, color, dark }) {
   return (
-    <div style={{ minWidth: 78 }}>
-      <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 3 }}>{label}</div>
-      <div style={{ fontFamily: T.sans, fontSize: 20, fontWeight: 650, color: color || T.ink, lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 2 }}>{sub}</div>}
+    <div style={{ minWidth: 88 }}>
+      <div style={{ fontFamily: T.sans, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: dark ? "#9AA6B2" : T.inkSoft, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontFamily: T.mono, fontSize: 22, fontWeight: 600, color: color || (dark ? "#FFFFFF" : T.ink), lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontFamily: T.mono, fontSize: 11, color: dark ? "#9AA6B2" : T.inkSoft, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
-function LinkIcon() {
-  return (<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>);
-}
-function DetailLink({ label, href, color }) {
+
+// Elemento firma: striscia esecuzioni, dal più vecchio al più recente
+function RunStrip({ runs }) {
+  if (!runs.length) return <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>nessuna esecuzione registrata</div>;
+  const strip = runs.slice(-24);
   return (
-    <a href={href} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: "#fff", background: color, padding: "6px 12px", borderRadius: 6, textDecoration: "none", opacity: 0.92 }}>
-      {label}<LinkIcon />
-    </a>
-  );
-}
-function StatusDot({ status }) {
-  const s = STATUS[status] || STATUS.soon;
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <span style={{ width: 9, height: 9, borderRadius: 99, background: s.dot, boxShadow: `0 0 0 3px ${s.dot}22` }} />
-      <span style={{ fontFamily: T.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>{s.label}</span>
-    </span>
+    <div style={{ display: "flex", gap: 3, alignItems: "flex-end" }} aria-label="Esito ultime esecuzioni">
+      {strip.map((r, i) => (
+        <div key={r.execution_id || i}
+          title={`${fmtWhen(r.started_at)} · ${r.status} · ${fmtDur(r.duration_s)}`}
+          style={{
+            width: 10, height: i === strip.length - 1 ? 20 : 14, borderRadius: 2,
+            background: r.status === "success" ? T.ok : T.err,
+            opacity: 0.45 + (0.55 * (i + 1)) / strip.length,
+          }} />
+      ))}
+    </div>
   );
 }
 
-function statsFor(runs, scenarioId) {
-  const r = runs.filter(x => String(x.flow_id) === String(scenarioId));
-  if (!r.length) return null;
-  const ok = r.filter(x => (x.status || "").toLowerCase() === "success").length;
-  const err = r.length - ok;
-  const durs = r.map(x => num(x.duration_s)).filter(Boolean);
-  const avg = durs.length ? durs.reduce((a, b) => a + b, 0) / durs.length : 0;
-  const sorted = [...r].sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
-  const byDay = {}; r.forEach(x => { const d = (x.started_at || "").slice(0, 10); if (d) byDay[d] = (byDay[d] || 0) + 1; });
-  const days = Object.keys(byDay).length; const perDay = days ? (r.length / days) : r.length;
-  return { total: r.length, ok, err, rate: r.length ? Math.round((ok / r.length) * 100) : null, avg, last: sorted[0], perDay };
+function DayBars({ series, color, unit }) {
+  const max = Math.max(1, ...series.map((d) => d.v));
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 44 }}>
+        {series.map((d) => (
+          <div key={d.k} title={`${d.k}: ${d.v} ${unit || ""}`} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div style={{ height: Math.max(2, (d.v / max) * 40), background: d.v ? (color || T.accent) : T.line, borderRadius: 2 }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.mono, fontSize: 9, color: T.inkSoft, marginTop: 3 }}>
+        <span>{series[0]?.k.slice(5)}</span><span>{series[series.length - 1]?.k.slice(5)}</span>
+      </div>
+    </div>
+  );
 }
 
-function FlowStrip({ flow, fam, data }) {
-  const isPlaceholder = flow.placeholder;
-  const status = isPlaceholder ? "soon" : (flow.status || (data?.st ? "active" : "standby"));
+function Panel({ children, style }) {
+  return <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: 18, ...style }}>{children}</div>;
+}
+
+function SectionLabel({ children }) {
+  return <div style={{ fontFamily: T.sans, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 8 }}>{children}</div>;
+}
+
+// ---- Card flusso -------------------------------------------------------
+function FlowCard({ flowId, runs }) {
+  const ok = runs.filter((r) => r.status === "success");
+  const err = runs.filter((r) => r.status !== "success");
+  const rate = runs.length ? Math.round((ok.length / runs.length) * 100) : null;
+  const avgD = ok.length ? ok.reduce((a, r) => a + (r.duration_s || 0), 0) / ok.length : null;
+  const last = runs[runs.length - 1];
+  const days = lastNDays(14).map((k) => ({ k, v: runs.filter((r) => dayKey(r.started_at) === k).length }));
   return (
-    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${fam.color}`, borderRadius: 12, padding: "14px 18px 0", marginBottom: 12, opacity: isPlaceholder ? 0.6 : 1 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: isPlaceholder ? 12 : 14 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: fam.color, letterSpacing: "0.04em" }}>{flow.code}</span>
-          <span style={{ fontFamily: T.sans, fontWeight: 650, fontSize: 15, color: T.ink }}>{flow.name}</span>
+    <Panel>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
+        <div>
+          <div style={{ fontFamily: T.sans, fontWeight: 600, fontSize: 15, color: T.ink }}>{FLOW_LABELS[flowId] || `Scenario ${flowId}`}</div>
+          <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>ultima run {last ? fmtWhen(last.started_at) : "—"}</div>
         </div>
-        <StatusDot status={status} />
+        {last && (
+          <span style={{ fontFamily: T.mono, fontSize: 11, padding: "3px 8px", borderRadius: 99, background: last.status === "success" ? T.okSoft : T.errSoft, color: last.status === "success" ? T.ok : T.err, whiteSpace: "nowrap" }}>
+            {last.status === "success" ? "ultima: ok" : "ultima: errore"}
+          </span>
+        )}
       </div>
-      {!isPlaceholder ? (
-        <>
-          <div style={{ display: "flex", gap: 26, flexWrap: "wrap", paddingBottom: 14 }}>
-            {data?.metrics?.map((m, i) => (<Metric key={i} label={m.label} value={m.value} sub={m.sub} color={m.color} />))}
-          </div>
-          <div style={{ borderTop: `1px solid ${T.line}`, margin: "0 -18px", padding: "10px 18px", display: "flex", gap: 10, flexWrap: "wrap", background: fam.soft }}>
-            {flow.makeUrl && <DetailLink label={`See make.com ${flow.code} flow`} href={flow.makeUrl} color={fam.color} />}
-            {flow.detail && <DetailLink label={flow.detail.label} href={LINKS[flow.detail.url]} color={fam.color} />}
-          </div>
-        </>
-      ) : (
-        <div style={{ paddingBottom: 14, fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>Reserved slot — this flow has not been built yet.</div>
-      )}
-    </div>
+      <div style={{ marginBottom: 12 }}>
+        <SectionLabel>Ultime esecuzioni</SectionLabel>
+        <RunStrip runs={runs} />
+      </div>
+      <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
+        <Kpi label="Run" value={runs.length} />
+        <Kpi label="Successo" value={rate == null ? "—" : `${rate}%`} color={rate == null ? T.ink : rate >= 90 ? T.ok : T.err} sub={`${err.length} errori`} />
+        <Kpi label="Durata media" value={fmtDur(avgD)} />
+      </div>
+      <SectionLabel>Run per giorno (14 gg)</SectionLabel>
+      <DayBars series={days} />
+    </Panel>
   );
 }
 
-const inp = { fontFamily: T.mono, fontSize: 11, padding: "5px 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "#fff", color: T.ink };
-
-function RecapItem({ name, status, note, runs }) {
-  const s = STATUS[status] || STATUS.standby;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-        <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot }} />
-        <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, color: "#fff" }}>{name}</span>
-      </div>
-      <div style={{ fontFamily: T.mono, fontSize: 10, color: "#8A94A6", paddingLeft: 15 }}>
-        {note ? note + " · " : ""}{runs ? `${runs.total} runs · last ${fmtWhen(runs.last?.started_at)}` : "no runs yet"}
-      </div>
-    </div>
-  );
-}
-
+// ---- App ---------------------------------------------------------------
 export default function App() {
-  const [runs, setRuns] = useState([]);
-  const [emailStats, setEmailStats] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [firecrawl, setFirecrawl] = useState([]);
-  const [engagement, setEngagement] = useState([]);
-  const [updatedAt, setUpdatedAt] = useState(null);
+  const [runsRaw, setRunsRaw] = useState(null);
+  const [fc, setFc] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [camp, setCamp] = useState(null);
   const [error, setError] = useState(null);
-  const [visibleFams, setVisibleFams] = useState({ A: true, B: true, C: true, D: true });
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [updatedAt, setUpdatedAt] = useState(null);
 
-  async function load() {
-    try {
-      setError(null);
-      const [r, e, c, f, g] = await Promise.all([
-        fetchCSV(RUNS_CSV_URL), fetchCSV(EMAIL_STATS_CSV_URL), fetchCSV(CAMPAIGNS_CSV_URL),
-        fetchCSV(FIRECRAWL_CSV_URL), fetchCSV(A2_ENGAGEMENT_CSV_URL),
-      ]);
-      const seen = new Set(); const rr = [];
-      r.forEach(x => { const k = x.execution_id || JSON.stringify(x); if (!seen.has(k)) { seen.add(k); rr.push(x); } });
-      setRuns(rr); setEmailStats(e); setCampaigns(c); setFirecrawl(f); setEngagement(g); setUpdatedAt(new Date());
-    } catch (err) { setError(err.message); }
-  }
-  useEffect(() => { load(); const id = setInterval(load, REFRESH_MINUTES * 60000); return () => clearInterval(id); }, []);
+  const load = () => {
+    setError(null);
+    Promise.all([fetchCsv(RUNS_CSV_URL), fetchCsv(FIRECRAWL_CSV_URL), fetchCsv(EMAIL_STATS_CSV_URL), fetchCsv(CAMPAIGNS_CSV_URL)])
+      .then(([r, f, e, c]) => { setRunsRaw(r); setFc(f); setEmail(e); setCamp(c); setUpdatedAt(new Date()); })
+      .catch((e) => setError(String(e)));
+  };
+  useEffect(() => { load(); const t = setInterval(load, REFRESH_MINUTES * 60000); return () => clearInterval(t); }, []);
 
-  const runsF = useMemo(() => runs.filter(x => {
-    const d = (x.started_at || "").slice(0, 10); if (!d) return true;
-    if (fromDate && d < fromDate) return false; if (toDate && d > toDate) return false; return true;
-  }), [runs, fromDate, toDate]);
+  // Dedup per execution_id, righe valide, ordinate per data
+  const runs = useMemo(() => {
+    if (!runsRaw) return [];
+    const seen = new Map();
+    for (const row of runsRaw) {
+      const id = row.execution_id;
+      if (!id || !row.flow_id) continue;
+      if (!seen.has(id)) seen.set(id, {
+        ...row,
+        duration_s: parseFloat(row.duration_s),
+        operations: parseInt(row.operations || 0, 10),
+      });
+    }
+    return [...seen.values()].sort((a, b) => (a.started_at || "").localeCompare(b.started_at || ""));
+  }, [runsRaw]);
 
+  const byFlow = useMemo(() => {
+    const g = {};
+    for (const r of runs) (g[r.flow_id] = g[r.flow_id] || []).push(r);
+    return g;
+  }, [runs]);
+
+  const totals = useMemo(() => {
+    const ok = runs.filter((r) => r.status === "success").length;
+    return { runs: runs.length, ok, err: runs.length - ok, ops: runs.reduce((a, r) => a + (r.operations || 0), 0) };
+  }, [runs]);
+
+  // Email: righe { date, event_type, count }
   const emailAgg = useMemo(() => {
-    if (!emailStats.length) return null;
-    let opens = 0, clicks = 0, bounces = 0;
-    emailStats.forEach(e => { const t = (e.event_type || "").toLowerCase(); const n = num(e.count) || 1;
-      if (t.includes("open")) opens += n; else if (t.includes("click")) clicks += n; else if (t.includes("bounce")) bounces += n; });
-    return { opens, clicks, bounces };
-  }, [emailStats]);
+    if (!email) return null;
+    const rows = email.filter((r) => r.event_type);
+    const n = (r) => parseInt(r.count, 10) || 1; // senza colonna count: 1 riga = 1 evento
+    const sum = (types) => rows.filter((r) => types.some((t) => (r.event_type || "").toLowerCase().includes(t))).reduce((a, r) => a + n(r), 0);
+    const bounceTypes = {};
+    for (const r of rows) {
+      const t = (r.event_type || "").toLowerCase();
+      if (t.includes("bounce")) bounceTypes[r.event_type] = (bounceTypes[r.event_type] || 0) + n(r);
+    }
+    const days = lastNDays(14).map((k) => ({
+      k,
+      v: rows.filter((r) => dayKey(r.date) === k && (r.event_type || "").toLowerCase().includes("bounce")).reduce((a, r) => a + n(r), 0),
+    }));
+    return { sent: sum(["delivery", "sent", "deliver"]), opens: sum(["open"]), clicks: sum(["click"]), bounces: sum(["bounce"]), bounceTypes, bounceDays: days };
+  }, [email]);
 
-  const campAgg = useMemo(() => {
-    if (!campaigns.length) return null;
-    const last = [...campaigns].sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0] || {};
-    return { active: num(last.list_active), unsub: num(last.list_unsub), bounce: num(last.list_bounce), at: last.logged_at };
-  }, [campaigns]);
-
-  const engAgg = useMemo(() => {
-    if (!engagement.length) return null;
-    const m = {}; engagement.forEach(x => { m[(x.metric || "").toLowerCase()] = num(x.n); });
-    return { opens: m.opens || 0, clicks: m.clicks || 0, unsub: m.unsubscribes || 0 };
-  }, [engagement]);
-
+  // Firecrawl: ultima lettura + consumo medio/giorno dai delta
   const fcAgg = useMemo(() => {
-    if (!firecrawl.length) return null;
-    const last = [...firecrawl].sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0] || {};
-    return { remaining: num(last.credits_remaining), burn: num(last.burn_per_day) };
-  }, [firecrawl]);
+    if (!fc || !fc.length) return null;
+    const rows = fc.filter((r) => r.remaining_credits).map((r) => ({ t: r.logged_at, v: parseInt(r.remaining_credits, 10) })).sort((a, b) => a.t.localeCompare(b.t));
+    if (!rows.length) return null;
+    const last = rows[rows.length - 1], first = rows[0];
+    const daysSpan = Math.max(1, (new Date(last.t) - new Date(first.t)) / 86400000);
+    const burn = Math.max(0, first.v - last.v) / daysSpan;
+    return { remaining: last.v, plan: parseInt(fc[fc.length - 1].plan_credits, 10) || null, burnPerDay: burn, periodEnd: fc[fc.length - 1].billing_period_end };
+  }, [fc]);
 
-  function metricsForFlow(flow) {
-    const st = statsFor(runsF, flow.scenarioId);
-    const base = st ? [
-      { label: "Runs", value: st.total },
-      { label: "Success", value: st.rate == null ? "—" : `${st.rate}%`, color: st.rate >= 90 ? T.ok : st.rate == null ? T.ink : T.err },
-      { label: "Avg. time", value: fmtDur(st.avg) },
-      { label: "Runs/day", value: st.perDay ? st.perDay.toFixed(1) : "—" },
-      { label: "Last run", value: st.last ? fmtWhen(st.last.started_at) : "—" },
-      { label: "Errors", value: st.err, color: st.err ? T.warn : T.ink },
-    ] : [{ label: "Runs", value: "—" }, { label: "Success", value: "—" }, { label: "Last run", value: "—" }];
-    if (flow.code === "A2") {
-      if (campAgg) {
-        base.push({ label: "Emails sent", value: campAgg.active + campAgg.unsub, sub: `${campAgg.active} active`, color: T.accent });
-        base.push({ label: "Unsubscribed", value: campAgg.unsub, color: campAgg.unsub ? T.warn : T.ink });
-        base.push({ label: "Bounces", value: campAgg.bounce, color: campAgg.bounce ? T.err : T.ink });
-      }
-      if (engAgg) { base.push({ label: "Opened", value: engAgg.opens }); base.push({ label: "Clicked", value: engAgg.clicks }); }
-      else { base.push({ label: "Opened", value: "—", sub: "see Campaigns report" }); }
-    }
-    if (flow.code === "A1" && emailAgg) {
-      base.push({ label: "Opened", value: emailAgg.opens, sub: `${emailAgg.clicks} clicks` });
-      base.push({ label: "Bounces", value: emailAgg.bounces, color: emailAgg.bounces ? T.warn : T.ink });
-    }
-    return { metrics: base, st };
-  }
+  // Campaigns: righe { logged_at, list_active, list_unsub, list_bounce } — ultima lettura + trend attivi
+  const campAgg = useMemo(() => {
+    if (!camp || !camp.length) return null;
+    const rows = camp.filter((r) => r.logged_at).sort((a, b) => (a.logged_at || "").localeCompare(b.logged_at || ""));
+    if (!rows.length) return null;
+    const last = rows[rows.length - 1];
+    const num = (v) => parseInt(v, 10) || 0;
+    const days = lastNDays(14).map((k) => {
+      const dayRows = rows.filter((r) => dayKey(r.logged_at) === k);
+      return { k, v: dayRows.length ? num(dayRows[dayRows.length - 1].list_active) : 0 };
+    });
+    return { active: num(last.list_active), unsub: num(last.list_unsub), bounce: num(last.list_bounce), at: last.logged_at, days };
+  }, [camp]);
 
-  const visibleFlows = FLOWS.filter(f => visibleFams[f.family]);
+  const totRate = totals.runs ? Math.round((totals.ok / totals.runs) * 100) : null;
+  const configured = RUNS_CSV_URL && !RUNS_CSV_URL.startsWith("INCOLLA");
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap'); * { box-sizing: border-box; } a { color: inherit; }`}</style>
-      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "28px 22px 60px" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, padding: "28px 20px", fontFamily: T.sans, color: T.ink }}>
+      <div style={{ maxWidth: 1020, margin: "0 auto" }}>
 
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <img src="https://www.aisearchaudit.ai/wp-content/uploads/2026/07/ai-search-audit-logo-no-tagline.png" alt="AI Search Audit" style={{ height: 42, width: "auto", display: "block" }} />
-            <div>
-              <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>Automation Flows — KPI Dashboard</h1>
-              <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 3 }}>{updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}</div>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 22 }}>
+          <div>
+            <div style={{ fontFamily: T.mono, fontSize: 11, color: T.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>AISA · Make.com · ZeptoMail · Firecrawl</div>
+            <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em" }}>KPI dei flussi di automazione</h1>
+            <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
+              {updatedAt ? `Aggiornato alle ${updatedAt.toLocaleTimeString("it-IT")} · refresh ogni ${REFRESH_MINUTES} min` : "Caricamento…"}
             </div>
           </div>
-          <button onClick={load} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", cursor: "pointer" }}>Refresh now</button>
+          <button onClick={load} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", cursor: "pointer" }}>
+            Aggiorna adesso
+          </button>
         </header>
 
-        {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
+        {!configured && (
+          <Panel style={{ borderStyle: "dashed", textAlign: "center", color: T.inkSoft }}>
+            Configura gli URL CSV in <code style={{ fontFamily: T.mono }}>src/config.js</code> — istruzioni nel README.
+          </Panel>
+        )}
 
-        <div style={{ background: T.ink, borderRadius: 12, padding: "14px 20px", marginBottom: 18, display: "flex", gap: 30, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894" }}>Active Make.com flows</div>
-          <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runs, "6350489")} />
-          <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runs, "6446272")} />
-        </div>
-
-        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
-          <span style={{ fontFamily: T.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>Show</span>
-          {["A", "B", "C", "D"].map(fk => (
-            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}>{fk} — {FAMILY[fk].name}</button>
-          ))}
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>
-            <span>Range</span>
-            <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} style={inp} />
-            <span>→</span>
-            <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} style={inp} />
-            {(fromDate || toDate) && <button onClick={() => { setFromDate(""); setToDate(""); }} style={{ ...inp, cursor: "pointer", border: "none", color: T.accent }}>clear</button>}
+        {error && (
+          <div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>
+            Errore nel caricamento dati: {error}. Verifica che i tab del foglio siano pubblicati sul web.
           </div>
-        </div>
+        )}
 
-        {["A", "B", "C", "D"].filter(fk => visibleFams[fk]).map(fk => {
-          const fam = FAMILY[fk];
-          const flowsIn = visibleFlows.filter(f => f.family === fk);
-          if (!flowsIn.length) return null;
-          return (
-            <section key={fk} style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "18px 2px 10px" }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: fam.color }} />
-                <h2 style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.02em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
+        {configured && runs.length > 0 && (
+          <>
+            {/* Banda aggregata */}
+            <div style={{ background: T.ink, borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+              <div style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, letterSpacing: "0.02em", color: "#FFFFFF", textAlign: "center", marginBottom: 16 }}>
+                Flussi di automazione attivi
               </div>
-              {flowsIn.map(flow => (<FlowStrip key={flow.code} flow={flow} fam={fam} data={flow.placeholder ? null : metricsForFlow(flow)} />))}
-            </section>
-          );
-        })}
-
-        <section style={{ marginTop: 26 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 10px" }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: FAMILY.S.color }} />
-            <h2 style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 700, color: T.ink, margin: 0 }}>Service Make.com flows</h2>
-          </div>
-          <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
-              {SERVICE_FLOWS.map(sf => {
-                return (
-                  <div key={sf.code} style={{ border: `1px solid ${T.line}`, borderRadius: 9, padding: "11px 13px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: FAMILY.S.color }}>{sf.code}</span>
-                      <StatusDot status={sf.status || "standby"} />
-                    </div>
-                    <div style={{ fontFamily: T.sans, fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 8 }}>{sf.name}</div>
-                    {sf.code === "K1" && fcAgg && (<div style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginBottom: 8 }}>Firecrawl: {fcAgg.remaining} credits{fcAgg.burn ? ` · ~${fcAgg.burn.toFixed(0)}/day` : ""}</div>)}
-                    <a href={sf.makeUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.sans, fontSize: 11, fontWeight: 600, color: FAMILY.S.color, textDecoration: "none" }}>See make.com {sf.code} flow<LinkIcon /></a>
-                  </div>
-                );
-              })}
+              <div style={{ display: "flex", gap: 28, flexWrap: "wrap", justifyContent: "center" }}>
+                <Kpi dark label="Run totali" value={totals.runs} />
+                <Kpi dark label="Successo" value={totRate == null ? "—" : `${totRate}%`} color={totRate >= 90 ? "#5BE3B8" : "#F0908A"} sub={`${totals.err} errori`} />
+                <Kpi dark label="Operazioni Make" value={totals.ops} />
+                {emailAgg && <Kpi dark label="Email inviate" value={emailAgg.sent} sub={`${emailAgg.opens} aperture`} />}
+                {emailAgg && <Kpi dark label="Bounce" value={emailAgg.bounces} color={emailAgg.bounces ? "#F5C97B" : "#5BE3B8"} />}
+              </div>
             </div>
-          </div>
-        </section>
 
-        <footer style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 28, textAlign: "center" }}>Data: Google Sheet «AISA - KPI Log» + Zoho Analytics · deduplicated by execution_id · Kleecks internal</footer>
+            {/* Card flussi + lista Campaigns */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 18 }}>
+              {Object.keys(FLOW_LABELS).map((id) => byFlow[id] ? <FlowCard key={id} flowId={id} runs={byFlow[id]} /> : null)}
+              <Panel>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontFamily: T.sans, fontWeight: 600, fontSize: 15, color: T.ink }}>Campaigns — lista Cold Outreach</div>
+                    <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>
+                      ultima lettura {campAgg ? fmtWhen(campAgg.at) : "—"}
+                    </div>
+                  </div>
+                  {campAgg && (
+                    <span style={{ fontFamily: T.mono, fontSize: 11, padding: "3px 8px", borderRadius: 99, background: T.accentSoft, color: T.accent, whiteSpace: "nowrap" }}>
+                      Zoho Campaigns
+                    </span>
+                  )}
+                </div>
+                {campAgg ? (
+                  <>
+                    <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
+                      <Kpi label="Iscritti attivi" value={campAgg.active} color={T.ok} />
+                      <Kpi label="Disiscritti" value={campAgg.unsub} color={campAgg.unsub ? T.warn : T.ink} />
+                      <Kpi label="Bounce" value={campAgg.bounce} color={campAgg.bounce ? T.err : T.ink} />
+                    </div>
+                    <SectionLabel>Iscritti attivi (14 gg)</SectionLabel>
+                    <DayBars series={campAgg.days} color={T.ok} unit="attivi" />
+                  </>
+                ) : (
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>
+                    In attesa delle prime letture del collector K3 o dell'URL del tab campaigns.
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {/* Deliverability + Firecrawl */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
+              <Panel>
+                <SectionLabel>Email · deliverability (aggregati, nessun dato personale)</SectionLabel>
+                {emailAgg ? (
+                  <>
+                    <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
+                      <Kpi label="Inviate" value={emailAgg.sent} color={T.ok} />
+                      <Kpi label="Aperture" value={emailAgg.opens} />
+                      <Kpi label="Click" value={emailAgg.clicks} />
+                      <Kpi label="Bounce" value={emailAgg.bounces} color={emailAgg.bounces ? T.warn : T.ok} />
+                    </div>
+                    {Object.keys(emailAgg.bounceTypes).length > 0 && (
+                      <div style={{ marginBottom: 12 }}>
+                        {Object.entries(emailAgg.bounceTypes).map(([t, n]) => (
+                          <span key={t} style={{ display: "inline-block", fontFamily: T.mono, fontSize: 11, padding: "3px 8px", borderRadius: 99, background: T.warnSoft, color: T.warn, marginRight: 6, marginBottom: 6 }}>{t}: {n}</span>
+                        ))}
+                      </div>
+                    )}
+                    <SectionLabel>Bounce per giorno (14 gg)</SectionLabel>
+                    <DayBars series={emailAgg.bounceDays} color={T.warn} unit="bounce" />
+                  </>
+                ) : (
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>In attesa dei primi eventi ZeptoMail o dell'URL del tab email_stats.</div>
+                )}
+              </Panel>
+              <Panel>
+                <SectionLabel>Firecrawl · crediti</SectionLabel>
+                {fcAgg ? (
+                  <>
+                    <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginBottom: 12 }}>
+                      <Kpi label="Residui" value={fcAgg.remaining} />
+                      {fcAgg.plan && <Kpi label="Piano" value={fcAgg.plan} />}
+                      <Kpi label="Consumo" value={fcAgg.burnPerDay ? `~${fcAgg.burnPerDay.toFixed(0)}/gg` : "n/d"} />
+                    </div>
+                    <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>
+                      Rinnovo periodo: {fcAgg.periodEnd ? fcAgg.periodEnd.slice(0, 10) : "—"}
+                      {fcAgg.burnPerDay > 0 && ` · autonomia stimata ~${Math.floor(fcAgg.remaining / fcAgg.burnPerDay)} giorni`}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>In attesa delle prime letture del collector K1.</div>
+                )}
+              </Panel>
+            </div>
+
+            <footer style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 24, textAlign: "center" }}>
+              Dati: Google Sheet «AISA - KPI Log» (tab pubblicati runs / firecrawl / email_stats / campaigns) · dedup per execution_id · Kleecks internal
+            </footer>
+          </>
+        )}
       </div>
     </div>
   );
