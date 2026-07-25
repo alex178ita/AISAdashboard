@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   RUNS_CSV_URL, FIRECRAWL_CSV_URL, EMAIL_STATS_CSV_URL, CAMPAIGNS_CSV_URL,
-  A2_ENGAGEMENT_CSV_URL, REFRESH_MINUTES, LINKS, FLOWS, SERVICE_FLOWS, FAMILY,
+  A2_ENGAGEMENT_CSV_URL, B_FUNNEL_CSV_URL, REFRESH_MINUTES, LINKS, FLOWS, SERVICE_FLOWS, FAMILY,
 } from "./config.js";
 
 const T = {
@@ -123,12 +123,34 @@ function RecapItem({ name, status, note, runs }) {
   );
 }
 
+function BFunnelPanel({ fam, f }) {
+  const tiles = [
+    { label: "Invites sent", value: f.invited || "—" },
+    { label: "Excluded (CRM)", value: f.excluded || "—", color: f.excluded ? T.warn : T.ink },
+    { label: "Accepted", value: f.accepted || "—", sub: f.accRate != null ? `${f.accRate}% acc.` : null, color: fam.color },
+    { label: "DM sent", value: f.dm || "—", sub: f.dmRate != null ? `${f.dmRate}% of acc.` : null, color: fam.color },
+    { label: "Replies", value: f.replies || "—", sub: f.replyRate != null ? `${f.replyRate}% reply` : null, color: f.replies ? T.ok : T.ink },
+  ];
+  return (
+    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${fam.color}`, borderRadius: 12, padding: "14px 18px", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontFamily: T.sans, fontWeight: 700, fontSize: 14, color: T.ink }}>LinkedIn outreach funnel</span>
+        <span style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft }}>{f.hasData ? "from KPI_Log" : "awaiting data — publish the KPI_Log tab as CSV and set B_FUNNEL_CSV_URL"}</span>
+      </div>
+      <div style={{ display: "flex", gap: 26, flexWrap: "wrap" }}>
+        {tiles.map((m, i) => (<Metric key={i} label={m.label} value={m.value} sub={m.sub} color={m.color} />))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [runs, setRuns] = useState([]);
   const [emailStats, setEmailStats] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [firecrawl, setFirecrawl] = useState([]);
   const [engagement, setEngagement] = useState([]);
+  const [bkpi, setBkpi] = useState([]);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [error, setError] = useState(null);
   const [visibleFams, setVisibleFams] = useState({ A: true, B: true, C: true, D: true });
@@ -138,13 +160,13 @@ export default function App() {
   async function load() {
     try {
       setError(null);
-      const [r, e, c, f, g] = await Promise.all([
+      const [r, e, c, f, g, b] = await Promise.all([
         fetchCSV(RUNS_CSV_URL), fetchCSV(EMAIL_STATS_CSV_URL), fetchCSV(CAMPAIGNS_CSV_URL),
-        fetchCSV(FIRECRAWL_CSV_URL), fetchCSV(A2_ENGAGEMENT_CSV_URL),
+        fetchCSV(FIRECRAWL_CSV_URL), fetchCSV(A2_ENGAGEMENT_CSV_URL), fetchCSV(B_FUNNEL_CSV_URL),
       ]);
       const seen = new Set(); const rr = [];
       r.forEach(x => { const k = x.execution_id || JSON.stringify(x); if (!seen.has(k)) { seen.add(k); rr.push(x); } });
-      setRuns(rr); setEmailStats(e); setCampaigns(c); setFirecrawl(f); setEngagement(g); setUpdatedAt(new Date());
+      setRuns(rr); setEmailStats(e); setCampaigns(c); setFirecrawl(f); setEngagement(g); setBkpi(b); setUpdatedAt(new Date());
     } catch (err) { setError(err.message); }
   }
   useEffect(() => { load(); const id = setInterval(load, REFRESH_MINUTES * 60000); return () => clearInterval(id); }, []);
@@ -187,6 +209,19 @@ export default function App() {
     const burn = Math.max(0, first.v - last.v) / daysSpan;
     return { remaining: last.v, plan: last.plan, burn, end: last.end };
   }, [firecrawl]);
+
+  const bFunnel = useMemo(() => {
+    const c = { invito_inviato: 0, escluso_crm: 0, connessione_accettata: 0, dm_inviato: 0, risposta: 0 };
+    bkpi.forEach(x => { const ev = (x.evento || "").trim().toLowerCase(); if (ev in c) c[ev] += 1; });
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
+    return {
+      invited: c.invito_inviato, accepted: c.connessione_accettata, dm: c.dm_inviato,
+      replies: c.risposta, excluded: c.escluso_crm, hasData: bkpi.length > 0,
+      accRate: pct(c.connessione_accettata, c.invito_inviato),
+      replyRate: pct(c.risposta, c.invito_inviato),
+      dmRate: pct(c.dm_inviato, c.connessione_accettata),
+    };
+  }, [bkpi]);
 
   function metricsForFlow(flow) {
     const st = statsFor(runsF, flow.scenarioId);
@@ -240,6 +275,7 @@ export default function App() {
           <div style={{ display: "flex", gap: 30, flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
             <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runs, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runs, "6446272")} />
+            <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–09:00" runs={statsFor(runs, "6513141")} />
           </div>
         </div>
 
@@ -267,6 +303,7 @@ export default function App() {
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: fam.color }} />
                 <h2 style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.02em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
               </div>
+              {fk === "B" && <BFunnelPanel fam={fam} f={bFunnel} />}
               {flowsIn.map(flow => (<FlowStrip key={flow.code} flow={flow} fam={fam} data={flow.placeholder ? null : metricsForFlow(flow)} />))}
             </section>
           );

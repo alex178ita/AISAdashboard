@@ -10,6 +10,12 @@ export const CAMPAIGNS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX
 // Publish the query table as CSV in Zoho Analytics and paste the URL here.
 export const A2_ENGAGEMENT_CSV_URL = ""; // <-- paste the published Analytics CSV URL
 
+// Flow B — LinkedIn ABM funnel.
+// Publish the "KPI_Log" tab of the "AISA_Flusso_B_Fogli" workbook as CSV and paste the URL here.
+// Expected columns: data · evento · linkedin_url · dettaglio
+// Events counted: invito_inviato · escluso_crm · connessione_accettata · dm_inviato · risposta
+export const B_FUNNEL_CSV_URL = ""; // <-- paste the published KPI_Log CSV URL
+
 // Auto-refresh (minutes)
 export const REFRESH_MINUTES = 5;
 
@@ -28,9 +34,14 @@ export const FLOWS = [
   // Family A — AISA audit & outreach (green)
   { code: "A1", family: "A", name: "Webhook — audit upon sign-up",    scenarioId: "6350489", status: "standby", makeUrl: `${MAKE_BASE}/6350489/edit`, detail: { label: "See details in ZeptoMail", url: "zeptomailReport" } },
   { code: "A2", family: "A", name: "Cold outreach email",             scenarioId: "6446272", status: "active", makeUrl: `${MAKE_BASE}/6446272/edit`, detail: { label: "See details in Zoho Campaigns", url: "campaignsReport" } },
-  // Family B — not yet available (pink)
-  { code: "B1", family: "B", name: "Not yet available", placeholder: true },
-  { code: "B2", family: "B", name: "Not yet available", placeholder: true },
+  // Family B — LinkedIn ABM outreach (pink)
+  { code: "B0",  family: "B", name: "Ingestion — PhantomBuster search → Sheet", scenarioId: "6676757", status: "active",  makeUrl: `${MAKE_BASE}/6676757/edit` },
+  { code: "B1",  family: "B", name: "CRM dedup → Lemlist connection invite",    scenarioId: "6513141", status: "active",  makeUrl: `${MAKE_BASE}/6513141/edit` },
+  { code: "B3",  family: "B", name: "Housekeeping & KPI — acceptances",         scenarioId: "6543270", status: "active",  makeUrl: `${MAKE_BASE}/6543270/edit` },
+  { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
+  { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },
+  { code: "B2",  family: "B", name: "DM writer (Claude) — review-gate",         scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
+  { code: "B2s", family: "B", name: "DM send (Message Sender) — off until review", scenarioId: "6698916", status: "standby", makeUrl: `${MAKE_BASE}/6698916/edit` },
   // Family C — content generation (indigo)
   { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", status: "invalid", makeUrl: `${MAKE_BASE}/6359563/edit` },
   { code: "C2", family: "C", name: "Blog writer → WordPress",         scenarioId: "6363252", status: "standby", makeUrl: `${MAKE_BASE}/6363252/edit` },
@@ -39,18 +50,19 @@ export const FLOWS = [
   { code: "D2", family: "D", name: "Not yet available", placeholder: true },
 ];
 
-// Service flows (K collectors + MD) — shown in the service strip
+// Service flows (K collectors + MD + B launchers) — shown in the service strip
 export const SERVICE_FLOWS = [
   { code: "K1", name: "KPI collector (Make + Firecrawl)", scenarioId: "6441414", status: "active", makeUrl: `${MAKE_BASE}/6441414/edit` },
   { code: "K2", name: "ZeptoMail events → KPI Log",       scenarioId: "6441412", status: "active", makeUrl: `${MAKE_BASE}/6441412/edit` },
   { code: "K3", name: "Campaigns stats collector",        scenarioId: "6448767", status: "active", makeUrl: `${MAKE_BASE}/6448767/edit` },
+  { code: "B4l", name: "B — launch Activity + Profile",    scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
   { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", status: "standby", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
 
 // Family colours (border + accent). Green & pink from the AISA logo.
 export const FAMILY = {
   A: { name: "AISA — Audit & Outreach", color: "#2FB980", soft: "#E7F7F855", tint: "#2FB98022" },
-  B: { name: "AISA — Reserved",         color: "#E6568F", soft: "#FDEAF255", tint: "#E6568F22" },
+  B: { name: "AISA — LinkedIn ABM",     color: "#E6568F", soft: "#FDEAF255", tint: "#E6568F22" },
   C: { name: "Content Generation",      color: "#5B63D3", soft: "#EEF0FB55", tint: "#5B63D322" },
   D: { name: "Reserved",                color: "#E08A3C", soft: "#FCF1E555", tint: "#E08A3C22" },
   S: { name: "Service Flows",           color: "#8A94A6", soft: "#F2F4F755", tint: "#8A94A622" },
