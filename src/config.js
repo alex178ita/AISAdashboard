@@ -11,10 +11,10 @@ export const CAMPAIGNS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX
 export const A2_ENGAGEMENT_CSV_URL = ""; // <-- paste the published Analytics CSV URL
 
 // Flow B — LinkedIn ABM funnel.
-// Published CSV of the "KPI_Log" tab of the AISA Hub workbook.
+// Publish the "KPI_Log" tab of the "AISA_Flusso_B_Fogli" workbook as CSV and paste the URL here.
 // Expected columns: data · evento · linkedin_url · dettaglio
 // Events counted: invito_inviato · escluso_crm · connessione_accettata · dm_inviato · risposta
-export const B_FUNNEL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2QNJv9wz9vGSFh_VioH1mo8XFWo_CFwnqpONPMOGZ1OA0kC4sax4PEFL8SZWKzqEZJmR4HM_wiLXL/pub?gid=1409232910&single=true&output=csv";
+export const B_FUNNEL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2QNJv9wz9vGSFh_VioH1mo8XFWo_CFwnqpONPMOGZ1OA0kC4sax4PEFL8SZWKzqEZJmR4HM_wiLXL/pub?gid=664403748&single=true&output=csv"; // KPI_Log tab (AISA_Flusso_B_Fogli), published CSV
 
 // Auto-refresh (minutes)
 export const REFRESH_MINUTES = 5;
@@ -41,7 +41,7 @@ export const FLOWS = [
   { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
   { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },
   { code: "B2",  family: "B", name: "DM writer (Claude) — review-gate",         scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
-  { code: "B2s", family: "B", name: "DM send (Message Sender)", scenarioId: "6698916", status: "active", makeUrl: `${MAKE_BASE}/6698916/edit` },
+  { code: "B2s", family: "B", name: "DM send (Message Sender) — off until review", scenarioId: "6698916", status: "standby", makeUrl: `${MAKE_BASE}/6698916/edit` },
   // Family C — content generation (indigo)
   { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", status: "invalid", makeUrl: `${MAKE_BASE}/6359563/edit` },
   { code: "C2", family: "C", name: "Blog writer → WordPress",         scenarioId: "6363252", status: "standby", makeUrl: `${MAKE_BASE}/6363252/edit` },
@@ -64,6 +64,6 @@ export const FAMILY = {
   A: { name: "AISA — Audit & Outreach", color: "#2FB980", soft: "#E7F7F855", tint: "#2FB98022" },
   B: { name: "AISA — LinkedIn ABM",     color: "#E6568F", soft: "#FDEAF255", tint: "#E6568F22" },
   C: { name: "Content Generation",      color: "#5B63D3", soft: "#EEF0FB55", tint: "#5B63D322" },
-  D: { name: "Reserved",                color: "#E08A3C", soft: "#FCF1E555", tint: "#E6568F22" },
+  D: { name: "Reserved",                color: "#E08A3C", soft: "#FCF1E555", tint: "#E08A3C22" },
   S: { name: "Service Flows",           color: "#8A94A6", soft: "#F2F4F755", tint: "#8A94A622" },
 };
