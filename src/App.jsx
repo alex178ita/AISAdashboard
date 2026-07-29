@@ -276,6 +276,7 @@ export default function App() {
             <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runs, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runs, "6446272")} />
             <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–09:00" runs={statsFor(runs, "6513141")} />
+            <RecapItem name="C1 · LinkedIn content" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runs, "6359563")} />
           </div>
         </div>
 
