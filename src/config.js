@@ -43,7 +43,7 @@ export const FLOWS = [
   { code: "B2",  family: "B", name: "DM writer (Claude) — review-gate",         scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
   { code: "B2s", family: "B", name: "DM send (Message Sender) — off until review", scenarioId: "6698916", status: "standby", makeUrl: `${MAKE_BASE}/6698916/edit` },
   // Family C — content generation (indigo)
-  { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", status: "invalid", makeUrl: `${MAKE_BASE}/6359563/edit` },
+  { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", status: "active", makeUrl: `${MAKE_BASE}/6359563/edit` },
   { code: "C2", family: "C", name: "Blog writer → WordPress",         scenarioId: "6363252", status: "standby", makeUrl: `${MAKE_BASE}/6363252/edit` },
   // Family D — not yet available (amber)
   { code: "D1", family: "D", name: "Not yet available", placeholder: true },
