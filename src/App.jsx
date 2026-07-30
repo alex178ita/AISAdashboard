@@ -29,7 +29,17 @@ function parseCSV(text) {
   const header = (rows.shift() || []).map(h => h.trim());
   return rows.filter(r => r.some(c => c !== "")).map(r => { const o = {}; header.forEach((h, i) => (o[h] = (r[i] ?? "").trim())); return o; });
 }
-async function fetchCSV(url) { if (!url) return []; const res = await fetch(url); if (!res.ok) throw new Error(`HTTP ${res.status}`); return parseCSV(await res.text()); }
+// Google serves the published CSVs with a long cache header, so a plain fetch()
+// on "Refresh now" was often replayed straight out of the browser cache — the
+// button worked, the data just came back byte-identical. no-store + a unique
+// query param forces a real round trip every time.
+async function fetchCSV(url) {
+  if (!url) return [];
+  const bust = (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+  const res = await fetch(url + bust, { cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return parseCSV(await res.text());
+}
 
 const num = v => { const n = parseFloat(String(v ?? "").replace(/[^\d.-]/g, "")); return isNaN(n) ? 0 : n; };
 const fmtWhen = iso => { if (!iso) return "—"; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
@@ -42,6 +52,9 @@ const fmtDur = s => { s = Math.round(s); if (!s) return "—"; const m = Math.fl
      "2026-07-30T13:01:14.085Z" · "2026-07-30 15:01" → 2026-07-30
      "30/07/2026 15:01:14" · "30-07-2026"            → 2026-07-30  (day first)
    Ambiguous d/m vs m/d dates are read day-first (Make + Italian sheets).     */
+const keyOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const daysAgoKey = n => { const d = new Date(); d.setDate(d.getDate() - n); return keyOf(d); };
+
 function dayKey(v) {
   const s = String(v ?? "").trim();
   if (!s) return "";
@@ -50,7 +63,7 @@ function dayKey(v) {
   m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);              // dd/mm/yyyy
   if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
   const d = new Date(s);                                            // last resort
-  return isNaN(d) ? "" : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return isNaN(d) ? "" : keyOf(d);
 }
 // Timestamp column names used across the KPI Log tabs / Analytics exports.
 const DATE_KEYS = ["started_at", "logged_at", "event_time", "event_date", "timestamp", "created_at", "data", "date", "ts", "day"];
@@ -132,6 +145,13 @@ function FlowStrip({ flow, fam, data }) {
 
 const inp = { fontFamily: T.mono, fontSize: 11, padding: "5px 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "#fff", color: T.ink };
 
+// One-click ranges, so the common cases don't need the date pickers at all.
+const PRESETS = [
+  { label: "today",  get: () => [daysAgoKey(0), daysAgoKey(0)] },
+  { label: "7d",     get: () => [daysAgoKey(6), daysAgoKey(0)] },
+  { label: "30d",    get: () => [daysAgoKey(29), daysAgoKey(0)] },
+];
+
 // One flow per row, left-justified: dot + name in a fixed-width column so the
 // grey detail text lines up vertically down the banner.
 function RecapItem({ name, status, note, runs }) {
@@ -178,6 +198,7 @@ export default function App() {
   const [engagement, setEngagement] = useState([]);
   const [bkpi, setBkpi] = useState([]);
   const [updatedAt, setUpdatedAt] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [visibleFams, setVisibleFams] = useState({ A: true, B: true, C: true, D: true });
   const [fromDate, setFromDate] = useState("");
@@ -185,7 +206,7 @@ export default function App() {
 
   async function load() {
     try {
-      setError(null);
+      setError(null); setLoading(true);
       const [r, e, c, f, g, b] = await Promise.all([
         fetchCSV(RUNS_CSV_URL), fetchCSV(EMAIL_STATS_CSV_URL), fetchCSV(CAMPAIGNS_CSV_URL),
         fetchCSV(FIRECRAWL_CSV_URL), fetchCSV(A2_ENGAGEMENT_CSV_URL), fetchCSV(B_FUNNEL_CSV_URL),
@@ -194,6 +215,7 @@ export default function App() {
       r.forEach(x => { const k = x.execution_id || JSON.stringify(x); if (!seen.has(k)) { seen.add(k); rr.push(x); } });
       setRuns(rr); setEmailStats(e); setCampaigns(c); setFirecrawl(f); setEngagement(g); setBkpi(b); setUpdatedAt(new Date());
     } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   }
   useEffect(() => { load(); const id = setInterval(load, REFRESH_MINUTES * 60000); return () => clearInterval(id); }, []);
 
@@ -307,7 +329,7 @@ export default function App() {
               <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 3 }}>{updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}</div>
             </div>
           </div>
-          <button onClick={load} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", cursor: "pointer" }}>Refresh now</button>
+          <button onClick={load} disabled={loading} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: loading ? T.inkSoft : T.accent, color: "#fff", cursor: loading ? "wait" : "pointer", minWidth: 122, transition: "background 0.15s" }}>{loading ? "Refreshing…" : "Refresh now"}</button>
         </header>
 
         {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
@@ -330,12 +352,30 @@ export default function App() {
             <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}>{fk} — {FAMILY[fk].name}</button>
           ))}
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>
-            <span>Range</span>
-            <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} style={inp} />
+            {PRESETS.map(p => {
+              const [pf, pt] = p.get();
+              const on = fromDate === pf && toDate === pt;
+              return (
+                <button key={p.label} onClick={() => { setFromDate(pf); setToDate(pt); }}
+                  style={{ ...inp, cursor: "pointer", fontWeight: on ? 700 : 500, borderColor: on ? T.accent : T.line, color: on ? T.accent : T.inkSoft, background: on ? "#F0FAF5" : "#fff" }}>
+                  {p.label}
+                </button>
+              );
+            })}
+            <span style={{ paddingLeft: 4 }}>Range</span>
+            <input type="date" value={fromDate} max={toDate || undefined} onChange={e => setFromDate(e.target.value)} style={inp} />
             <span>→</span>
-            <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} style={inp} />
-            {rangeOn && <span style={{ color: T.accent, fontWeight: 600 }}>{runsF.length}/{runs.length} runs in range</span>}
-            {rangeOn && <button onClick={() => { setFromDate(""); setToDate(""); }} style={{ ...inp, cursor: "pointer", border: "none", color: T.accent }}>clear</button>}
+            <input type="date" value={toDate} min={fromDate || undefined} onChange={e => setToDate(e.target.value)} style={inp} />
+            {rangeOn && <button onClick={() => { setFromDate(""); setToDate(""); }} style={{ ...inp, cursor: "pointer", border: "none", color: T.accent, fontWeight: 600 }}>clear</button>}
+          </div>
+
+          {/* Explicit feedback: the range applies the moment a date changes — there
+              is no Apply/Enter step — and it now hides rows from EVERY KPI, so it
+              has to be obvious when one is active. */}
+          <div style={{ width: "100%", fontFamily: T.mono, fontSize: 10.5, color: rangeOn ? T.accent : T.inkSoft, borderTop: `1px dashed ${T.line}`, paddingTop: 9, marginTop: 2 }}>
+            {rangeOn
+              ? `Filter active — ${fromDate || "start"} → ${toDate || "today"} · showing ${runsF.length} of ${runs.length} runs · applied automatically, no Enter needed · newer runs outside this range are hidden until you clear it`
+              : "No date filter — showing all data. Pick a range (or a preset) and every KPI on the page follows it; it applies as soon as you choose a date."}
           </div>
         </div>
 
