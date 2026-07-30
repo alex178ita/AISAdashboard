@@ -153,14 +153,22 @@ const PRESETS = [
 ];
 
 // One flow per row, left-justified: dot + name in a fixed-width column so the
-// grey detail text lines up vertically down the banner.
+// grey detail text lines up vertically down the banner. The status word is
+// spelled out next to the dot — an 8px amber dot next to an 8px green one is
+// not a readable difference on a black background, so a flow in standby has to
+// SAY standby. Non-active rows are dimmed as a second cue.
 function RecapItem({ name, status, note, runs }) {
-  const s = STATUS[status] || STATUS.standby;
+  const key = STATUS[status] ? status : "standby";
+  const s = STATUS[key];
+  const off = key !== "active";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", flexWrap: "wrap", padding: "3px 0" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", flexWrap: "wrap", padding: "3px 0", opacity: off ? 0.62 : 1 }}>
       <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 210, flex: "0 0 auto" }}>
         <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, flex: "0 0 auto" }} />
         <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, color: "#fff" }}>{name}</span>
+      </span>
+      <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: s.dot, minWidth: 104, flex: "0 0 auto" }}>
+        {s.label}
       </span>
       <span style={{ fontFamily: T.mono, fontSize: 10, color: "#8A94A6" }}>
         {note ? note + " · " : ""}{runs ? `${runs.total} runs · last ${fmtWhen(runs.last?.started_at)}` : "no runs yet"}
@@ -336,10 +344,10 @@ export default function App() {
 
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
           <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>
-            Active Make.com flows{rangeOn ? ` · ${fromDate || "start"} → ${toDate || "today"}` : ""}
+            Make.com flows — status{rangeOn ? ` · ${fromDate || "start"} → ${toDate || "today"}` : ""}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-            <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runsF, "6350489")} />
+            <RecapItem name="A1 · Webhook on sign-up" status="standby" note="off in Make — no sign-up trigger" runs={statsFor(runsF, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runsF, "6446272")} />
             <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–09:00" runs={statsFor(runsF, "6513141")} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runsF, "6359563")} />
