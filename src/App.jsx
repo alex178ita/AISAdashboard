@@ -35,6 +35,30 @@ const num = v => { const n = parseFloat(String(v ?? "").replace(/[^\d.-]/g, ""))
 const fmtWhen = iso => { if (!iso) return "—"; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
 const fmtDur = s => { s = Math.round(s); if (!s) return "—"; const m = Math.floor(s / 60), r = s % 60; return m ? `${m}m ${r}s` : `${r}s`; };
 
+/* ---------- date range handling -------------------------------------------
+   The sheets do not all emit the same timestamp format, and the <input type=
+   "date"> gives us a plain yyyy-mm-dd. dayKey() normalises anything we might
+   get into a sortable yyyy-mm-dd so a plain string comparison is valid:
+     "2026-07-30T13:01:14.085Z" · "2026-07-30 15:01" → 2026-07-30
+     "30/07/2026 15:01:14" · "30-07-2026"            → 2026-07-30  (day first)
+   Ambiguous d/m vs m/d dates are read day-first (Make + Italian sheets).     */
+function dayKey(v) {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);          // yyyy-mm-dd
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);              // dd/mm/yyyy
+  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  const d = new Date(s);                                            // last resort
+  return isNaN(d) ? "" : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+// Timestamp column names used across the KPI Log tabs / Analytics exports.
+const DATE_KEYS = ["started_at", "logged_at", "event_time", "event_date", "timestamp", "created_at", "data", "date", "ts", "day"];
+function rowDay(row) {
+  for (const k of DATE_KEYS) { const v = row?.[k]; if (v) { const d = dayKey(v); if (d) return d; } }
+  return "";
+}
+
 function Metric({ label, value, sub, color }) {
   return (
     <div style={{ minWidth: 78 }}>
@@ -72,7 +96,7 @@ function statsFor(runs, scenarioId) {
   const durs = r.map(x => num(x.duration_s)).filter(Boolean);
   const avg = durs.length ? durs.reduce((a, b) => a + b, 0) / durs.length : 0;
   const sorted = [...r].sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
-  const byDay = {}; r.forEach(x => { const d = (x.started_at || "").slice(0, 10); if (d) byDay[d] = (byDay[d] || 0) + 1; });
+  const byDay = {}; r.forEach(x => { const d = dayKey(x.started_at); if (d) byDay[d] = (byDay[d] || 0) + 1; });
   const days = Object.keys(byDay).length; const perDay = days ? (r.length / days) : r.length;
   return { total: r.length, ok, err, rate: r.length ? Math.round((ok / r.length) * 100) : null, avg, last: sorted[0], perDay };
 }
@@ -108,17 +132,19 @@ function FlowStrip({ flow, fam, data }) {
 
 const inp = { fontFamily: T.mono, fontSize: 11, padding: "5px 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "#fff", color: T.ink };
 
+// One flow per row, left-justified: dot + name in a fixed-width column so the
+// grey detail text lines up vertically down the banner.
 function RecapItem({ name, status, note, runs }) {
   const s = STATUS[status] || STATUS.standby;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-        <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", flexWrap: "wrap", padding: "3px 0" }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 210, flex: "0 0 auto" }}>
+        <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, flex: "0 0 auto" }} />
         <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, color: "#fff" }}>{name}</span>
-      </div>
-      <div style={{ fontFamily: T.mono, fontSize: 10, color: "#8A94A6", paddingLeft: 15 }}>
+      </span>
+      <span style={{ fontFamily: T.mono, fontSize: 10, color: "#8A94A6" }}>
         {note ? note + " · " : ""}{runs ? `${runs.total} runs · last ${fmtWhen(runs.last?.started_at)}` : "no runs yet"}
-      </div>
+      </span>
     </div>
   );
 }
@@ -171,35 +197,51 @@ export default function App() {
   }
   useEffect(() => { load(); const id = setInterval(load, REFRESH_MINUTES * 60000); return () => clearInterval(id); }, []);
 
-  const runsF = useMemo(() => runs.filter(x => {
-    const d = (x.started_at || "").slice(0, 10); if (!d) return true;
-    if (fromDate && d < fromDate) return false; if (toDate && d > toDate) return false; return true;
-  }), [runs, fromDate, toDate]);
+  // One predicate, applied to every dataset that carries a timestamp, so the
+  // range drives the whole page instead of just the per-flow run counters.
+  const rangeOn = Boolean(fromDate || toDate);
+  const inRange = useMemo(() => {
+    if (!fromDate && !toDate) return () => true;
+    return row => {
+      const d = rowDay(row);
+      if (!d) return true;                       // undated rows are never hidden
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    };
+  }, [fromDate, toDate]);
+
+  const runsF       = useMemo(() => runs.filter(inRange), [runs, inRange]);
+  const emailStatsF = useMemo(() => emailStats.filter(inRange), [emailStats, inRange]);
+  const campaignsF  = useMemo(() => campaigns.filter(inRange), [campaigns, inRange]);
+  const engagementF = useMemo(() => engagement.filter(inRange), [engagement, inRange]);
+  const firecrawlF  = useMemo(() => firecrawl.filter(inRange), [firecrawl, inRange]);
+  const bkpiF       = useMemo(() => bkpi.filter(inRange), [bkpi, inRange]);
 
   const emailAgg = useMemo(() => {
-    if (!emailStats.length) return null;
+    if (!emailStatsF.length) return null;
     let sent = 0, opens = 0, clicks = 0, bounces = 0;
-    emailStats.forEach(e => { const t = (e.event_type || "").toLowerCase(); const n = num(e.count) || 1;
+    emailStatsF.forEach(e => { const t = (e.event_type || "").toLowerCase(); const n = num(e.count) || 1;
       if (t.includes("deliver") || t === "sent" || t.includes("email_sent")) sent += n;
       else if (t.includes("open")) opens += n; else if (t.includes("click")) clicks += n; else if (t.includes("bounce")) bounces += n; });
     return { sent, opens, clicks, bounces };
-  }, [emailStats]);
+  }, [emailStatsF]);
 
   const campAgg = useMemo(() => {
-    if (!campaigns.length) return null;
-    const last = [...campaigns].sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0] || {};
+    if (!campaignsF.length) return null;
+    const last = [...campaignsF].sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0] || {};
     return { active: num(last.list_active), unsub: num(last.list_unsub), bounce: num(last.list_bounce), at: last.logged_at };
-  }, [campaigns]);
+  }, [campaignsF]);
 
   const engAgg = useMemo(() => {
-    if (!engagement.length) return null;
-    const m = {}; engagement.forEach(x => { m[(x.metric || "").toLowerCase()] = num(x.n); });
+    if (!engagementF.length) return null;
+    const m = {}; engagementF.forEach(x => { m[(x.metric || "").toLowerCase()] = num(x.n); });
     return { opens: m.opens || 0, clicks: m.clicks || 0, unsub: m.unsubscribes || 0 };
-  }, [engagement]);
+  }, [engagementF]);
 
   const fcAgg = useMemo(() => {
-    if (!firecrawl.length) return null;
-    const rows = firecrawl
+    if (!firecrawlF.length) return null;
+    const rows = firecrawlF
       .filter(r => r.remaining_credits !== undefined && r.remaining_credits !== "")
       .map(r => ({ t: r.logged_at, v: num(r.remaining_credits), plan: num(r.plan_credits), end: r.billing_period_end }))
       .sort((a, b) => new Date(a.t) - new Date(b.t));
@@ -208,20 +250,20 @@ export default function App() {
     const daysSpan = Math.max(1, (new Date(last.t) - new Date(first.t)) / 86400000);
     const burn = Math.max(0, first.v - last.v) / daysSpan;
     return { remaining: last.v, plan: last.plan, burn, end: last.end };
-  }, [firecrawl]);
+  }, [firecrawlF]);
 
   const bFunnel = useMemo(() => {
     const c = { invito_inviato: 0, escluso_crm: 0, connessione_accettata: 0, dm_inviato: 0, risposta: 0 };
-    bkpi.forEach(x => { const ev = (x.evento || "").trim().toLowerCase(); if (ev in c) c[ev] += 1; });
+    bkpiF.forEach(x => { const ev = (x.evento || "").trim().toLowerCase(); if (ev in c) c[ev] += 1; });
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
     return {
       invited: c.invito_inviato, accepted: c.connessione_accettata, dm: c.dm_inviato,
-      replies: c.risposta, excluded: c.escluso_crm, hasData: bkpi.length > 0,
+      replies: c.risposta, excluded: c.escluso_crm, hasData: bkpiF.length > 0,
       accRate: pct(c.connessione_accettata, c.invito_inviato),
       replyRate: pct(c.risposta, c.invito_inviato),
       dmRate: pct(c.dm_inviato, c.connessione_accettata),
     };
-  }, [bkpi]);
+  }, [bkpiF]);
 
   function metricsForFlow(flow) {
     const st = statsFor(runsF, flow.scenarioId);
@@ -271,12 +313,14 @@ export default function App() {
         {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
-          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "center", marginBottom: 14 }}>Active Make.com flows</div>
-          <div style={{ display: "flex", gap: 30, flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
-            <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runs, "6350489")} />
-            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runs, "6446272")} />
-            <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–09:00" runs={statsFor(runs, "6513141")} />
-            <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runs, "6359563")} />
+          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>
+            Active Make.com flows{rangeOn ? ` · ${fromDate || "start"} → ${toDate || "today"}` : ""}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+            <RecapItem name="A1 · Webhook on sign-up" status="standby" runs={statsFor(runsF, "6350489")} />
+            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runsF, "6446272")} />
+            <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–09:00" runs={statsFor(runsF, "6513141")} />
+            <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runsF, "6359563")} />
           </div>
         </div>
 
@@ -290,7 +334,8 @@ export default function App() {
             <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} style={inp} />
             <span>→</span>
             <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} style={inp} />
-            {(fromDate || toDate) && <button onClick={() => { setFromDate(""); setToDate(""); }} style={{ ...inp, cursor: "pointer", border: "none", color: T.accent }}>clear</button>}
+            {rangeOn && <span style={{ color: T.accent, fontWeight: 600 }}>{runsF.length}/{runs.length} runs in range</span>}
+            {rangeOn && <button onClick={() => { setFromDate(""); setToDate(""); }} style={{ ...inp, cursor: "pointer", border: "none", color: T.accent }}>clear</button>}
           </div>
         </div>
 
