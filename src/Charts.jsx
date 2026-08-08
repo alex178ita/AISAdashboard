@@ -255,7 +255,7 @@ export default function Charts() {
         <Card
           title="Make operations per day, by family"
           subtitle={`${opsTotal.toLocaleString("en-GB")} operations in range · ${opsAvgDay.toLocaleString("en-GB")}/day average · projected ${projMonth.toLocaleString("en-GB")}/month against a ${OPS_PLAN_PER_MONTH.toLocaleString("en-GB")} plan`}
-          note="The dashed line is the daily budget implied by the plan. Operations are the real currency of Make: a flow can look healthy and still be expensive. The step change in early August is the three-hour write window introduced in K1 v1.2, which cut collector consumption by roughly 90%."
+          note="The dashed line is the daily budget implied by the plan. Operations are the real currency of Make: a flow can look healthy and still be expensive. The Service band covers the K collectors, which have only been monitoring themselves since 8 August 2026 — earlier days understate the true total, and the sharp fall in collector consumption produced by the three-hour write window in K1 v1.2 predates the measurement and is therefore not visible here."
         >
           {!days.length ? <Empty msg="no run data in range" /> : (
             <>
