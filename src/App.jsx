@@ -4,6 +4,7 @@ import {
   A2_ENGAGEMENT_CSV_URL, B_FUNNEL_CSV_URL, REFRESH_MINUTES, LINKS, FLOWS, SERVICE_FLOWS, FAMILY,
 } from "./config.js";
 import BlogPanel from "./BlogPanel.jsx";
+import Charts from "./Charts.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -324,7 +325,17 @@ export default function App() {
     return { metrics: base, st };
   }
 
+  // Hash routing — a second view without adding a router dependency.
+  const [route, setRoute] = useState(typeof window !== "undefined" ? window.location.hash : "");
+  useEffect(() => {
+    const onHash = () => setRoute(window.location.hash);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
   const visibleFlows = FLOWS.filter(f => visibleFams[f.family]);
+
+  if (route.startsWith("#/charts")) return <Charts />;
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>
@@ -344,11 +355,18 @@ export default function App() {
 
         {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
-        <div style={{ marginBottom: 12, fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
-          Full tech &amp; user documentation{" "}
-          <a href="https://drive.google.com/drive/folders/1j9Kg76JddbTKo3_OZw80ZQ1Qc3WNkXa1?usp=share_link"
-             target="_blank" rel="noreferrer"
-             style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>here</a>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12, fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
+          <span>
+            Full tech &amp; user documentation{" "}
+            <a href="https://drive.google.com/drive/folders/1j9Kg76JddbTKo3_OZw80ZQ1Qc3WNkXa1?usp=share_link"
+               target="_blank" rel="noreferrer"
+               style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>here</a>
+          </span>
+          <span>
+            Statistical{" "}
+            <a href="#/charts" style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>graphs</a>
+            {" "}over time
+          </span>
         </div>
 
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
