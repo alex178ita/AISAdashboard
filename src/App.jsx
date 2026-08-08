@@ -344,6 +344,13 @@ export default function App() {
 
         {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
+        <div style={{ marginBottom: 12, fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
+          Full tech &amp; user documentation{" "}
+          <a href="https://drive.google.com/drive/folders/1j9Kg76JddbTKo3_OZw80ZQ1Qc3WNkXa1?usp=share_link"
+             target="_blank" rel="noreferrer"
+             style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>here</a>
+        </div>
+
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
           <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>
             Make.com flows — status{rangeOn ? ` · ${fromDate || "start"} → ${toDate || "today"}` : ""}
