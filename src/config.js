@@ -16,6 +16,14 @@ export const A2_ENGAGEMENT_CSV_URL = ""; // <-- paste the published Analytics CS
 // Events counted: invito_inviato · escluso_crm · connessione_accettata · dm_inviato · risposta
 export const B_FUNNEL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2QNJv9wz9vGSFh_VioH1mo8XFWo_CFwnqpONPMOGZ1OA0kC4sax4PEFL8SZWKzqEZJmR4HM_wiLXL/pub?gid=664403748&single=true&output=csv"; // KPI_Log tab (AISA_Flusso_B_Fogli), published CSV
 
+// Flow C2 — blog editorial KPIs (Airtable "AISA Blog Editorial").
+// Unlike every other source here, these are STATES, not events: how many ideas are queued,
+// how many drafts await review, how many articles went live. A published CSV is therefore
+// the wrong shape — the dashboard calls a serverless route instead, which reads the Airtable
+// token from a Vercel environment variable and returns aggregates only. The token must never
+// reach the browser. Leave empty to hide the blog panel.
+export const BLOG_KPI_URL = "/api/blog-kpi";
+
 // Auto-refresh (minutes)
 export const REFRESH_MINUTES = 5;
 
@@ -26,6 +34,8 @@ const MAKE_BASE = "https://eu1.make.com/1967086/scenarios";
 export const LINKS = {
   campaignsReport: "https://campaigns.zoho.eu/campaigns/org20070200946/home.do#reports/48756000030171157/view",
   zeptomailReport: "https://zeptomail.zoho.eu/zem/20115882015#reports/overview",
+  airtableBase: "https://airtable.com/appN8ORvz4lZKyjO1",
+  blogSection: "https://www.aisearchaudit.ai/blog/",
 };
 
 // Flow registry — the backbone of the layout.
@@ -40,11 +50,16 @@ export const FLOWS = [
   { code: "B3",  family: "B", name: "Housekeeping & KPI — acceptances",         scenarioId: "6543270", status: "active",  makeUrl: `${MAKE_BASE}/6543270/edit` },
   { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
   { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },
+  { code: "Bg",  family: "B", name: "B-guard — skip already-messaged",          scenarioId: "6745694", status: "active",  makeUrl: `${MAKE_BASE}/6745694/edit` },
   { code: "B2",  family: "B", name: "DM writer (Claude) — review-gate",         scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
-  { code: "B2s", family: "B", name: "DM send (Message Sender) — off until review", scenarioId: "6698916", status: "standby", makeUrl: `${MAKE_BASE}/6698916/edit` },
+  { code: "B2s", family: "B", name: "DM send (Message Sender)",                 scenarioId: "6698916", status: "active",  makeUrl: `${MAKE_BASE}/6698916/edit` },
+  { code: "B2c", family: "B", name: "B2-cleanup — clear DM_Log + Master",       scenarioId: "6729475", status: "active",  makeUrl: `${MAKE_BASE}/6729475/edit` },
+  { code: "B5",  family: "B", name: "Reply alert → Gmail + Cliq",               scenarioId: "6731586", status: "active",  makeUrl: `${MAKE_BASE}/6731586/edit` },
   // Family C — content generation (indigo)
-  { code: "C1", family: "C", name: "Social writer → Zoho Social",     scenarioId: "6359563", status: "active", makeUrl: `${MAKE_BASE}/6359563/edit` },
-  { code: "C2", family: "C", name: "Blog writer → WordPress",         scenarioId: "6363252", status: "standby", makeUrl: `${MAKE_BASE}/6363252/edit` },
+  { code: "C1",  family: "C", name: "Social writer → Zoho Social",              scenarioId: "6359563", status: "active", makeUrl: `${MAKE_BASE}/6359563/edit` },
+  { code: "C2a", family: "C", name: "Topic radar → Airtable Ideas",             scenarioId: "6871616", status: "active", makeUrl: `${MAKE_BASE}/6871616/edit`, detail: { label: "Open the editorial base", url: "airtableBase" } },
+  { code: "C2b", family: "C", name: "Blog writer → WordPress draft",            scenarioId: "6864777", status: "active", makeUrl: `${MAKE_BASE}/6864777/edit` },
+  { code: "C2c", family: "C", name: "Publisher — approved → live",              scenarioId: "6871324", status: "active", makeUrl: `${MAKE_BASE}/6871324/edit`, detail: { label: "See the blog", url: "blogSection" } },
   // Family D — not yet available (amber)
   { code: "D1", family: "D", name: "Not yet available", placeholder: true },
   { code: "D2", family: "D", name: "Not yet available", placeholder: true },
@@ -55,7 +70,7 @@ export const SERVICE_FLOWS = [
   { code: "K1", name: "KPI collector (Make + Firecrawl)", scenarioId: "6441414", status: "active", makeUrl: `${MAKE_BASE}/6441414/edit` },
   { code: "K2", name: "ZeptoMail events → KPI Log",       scenarioId: "6441412", status: "active", makeUrl: `${MAKE_BASE}/6441412/edit` },
   { code: "K3", name: "Campaigns stats collector",        scenarioId: "6448767", status: "active", makeUrl: `${MAKE_BASE}/6448767/edit` },
-  { code: "B4l", name: "B — launch Activity + Profile",    scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
+  { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
   { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", status: "standby", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
 
