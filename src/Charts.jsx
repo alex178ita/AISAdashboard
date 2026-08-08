@@ -67,7 +67,7 @@ const FAM_OF = (() => {
 
 const W = 900, H = 260, PAD = { l: 52, r: 16, t: 14, b: 30 };
 
-function Axes({ maxY, days, yFmt = v => v }) {
+function Axes({ maxY, days, yFmt = v => Math.round(v) }) {
   const ticks = 4;
   return (
     <>
@@ -77,7 +77,7 @@ function Axes({ maxY, days, yFmt = v => v }) {
         return (
           <g key={i}>
             <line x1={PAD.l} x2={W - PAD.r} y1={y} y2={y} stroke={T.line} strokeWidth="1" />
-            <text x={PAD.l - 8} y={y + 3.5} textAnchor="end" fontSize="10" fill={T.inkSoft} fontFamily={T.mono}>{yFmt(Math.round(v))}</text>
+            <text x={PAD.l - 8} y={y + 3.5} textAnchor="end" fontSize="10" fill={T.inkSoft} fontFamily={T.mono}>{yFmt(v)}</text>
           </g>
         );
       })}
@@ -167,13 +167,21 @@ export default function Charts() {
       .map(r => ({ t: new Date(r.logged_at).getTime(), v: num(r.remaining_credits) }))
       .sort((a, b) => a.t - b.t), [fire, since]);
 
+  // Burn must be measured on the current segment only. A plan top-up appears as
+  // an upward jump, and averaging across it produces a negative burn and a
+  // meaningless projection — which is exactly what the first version reported.
   const burn = useMemo(() => {
     if (fireSeries.length < 2) return null;
-    const a = fireSeries[0], b = fireSeries[fireSeries.length - 1];
+    let start = 0;
+    for (let i = 1; i < fireSeries.length; i++) {
+      if (fireSeries[i].v > fireSeries[i - 1].v * 1.05) start = i; // top-up detected
+    }
+    const seg = fireSeries.slice(start);
+    if (seg.length < 2) return { perDay: null, left: fireSeries[fireSeries.length - 1].v, daysLeft: null, toppedUp: start > 0 };
+    const a = seg[0], b = seg[seg.length - 1];
     const dd = (b.t - a.t) / 86400000;
-    if (dd <= 0) return null;
-    const perDay = (a.v - b.v) / dd;
-    return { perDay, left: b.v, daysLeft: perDay > 0 ? b.v / perDay : null };
+    const perDay = dd > 0 ? (a.v - b.v) / dd : 0;
+    return { perDay, left: b.v, daysLeft: perDay > 0 ? b.v / perDay : null, toppedUp: start > 0, segDays: dd };
   }, [fireSeries]);
 
   /* 3 — Campaigns list health */
@@ -251,7 +259,7 @@ export default function Charts() {
         >
           {!days.length ? <Empty msg="no run data in range" /> : (
             <>
-              <Axes maxY={opsMax} days={days} yFmt={v => v >= 1000 ? `${Math.round(v / 1000)}k` : v} />
+              <Axes maxY={opsMax} days={days} yFmt={v => v >= 1000 ? `${Math.round(v / 1000)}k` : Math.round(v)} />
               {days.map((d, i) => {
                 const v = opsByDay[d] || { A: 0, B: 0, C: 0, S: 0 };
                 let acc = 0;
@@ -279,14 +287,14 @@ export default function Charts() {
         {/* 2 — Firecrawl */}
         <Card
           title="Firecrawl credits remaining"
-          subtitle={burn ? `${Math.round(burn.left).toLocaleString("en-GB")} left · burning ${Math.round(burn.perDay).toLocaleString("en-GB")}/day · ${burn.daysLeft ? `${Math.round(burn.daysLeft)} days of autonomy` : "no net consumption in range"}` : "not enough readings in range"}
-          note="Firecrawl is the scarcest resource in the system and only A1 and A2 consume it. The slope matters more than the number: a steepening curve means the cold-outreach batch size has grown, and the projection tells you how long before a top-up is needed."
+          subtitle={burn ? `${Math.round(burn.left).toLocaleString("en-GB")} left${burn.toppedUp ? " · topped up in range, burn measured since" : ""} · ${burn.perDay > 0 ? `burning ${Math.round(burn.perDay).toLocaleString("en-GB")}/day` : "no net consumption yet"}${burn.daysLeft ? ` · ${Math.round(burn.daysLeft)} days of autonomy` : ""}` : "not enough readings in range"}
+          note="Firecrawl is the scarcest resource in the system and only A1 and A2 consume it. The slope matters more than the number: a steepening curve means the cold-outreach batch size has grown, and the projection tells you how long before a top-up is needed. An upward jump is a top-up: the burn rate is measured from that point on, not across it."
         >
           {fireSeries.length < 2 ? <Empty msg="not enough credit readings in range" /> : (() => {
             const maxV = Math.max(...fireSeries.map(p => p.v)) * 1.05;
             return (
               <>
-                <Axes maxY={maxV} days={days} yFmt={v => v >= 1000 ? `${Math.round(v / 1000)}k` : v} />
+                <Axes maxY={maxV} days={days} yFmt={v => v >= 1000 ? `${Math.round(v / 1000)}k` : Math.round(v)} />
                 <path d={linePath(fireSeries, maxV)} fill="none" stroke={T.warn} strokeWidth="2" />
               </>
             );
@@ -304,7 +312,7 @@ export default function Charts() {
             const yOf = v => H - PAD.b - ((H - PAD.t - PAD.b) * v) / maxV;
             return (
               <>
-                <Axes maxY={maxV} days={days} yFmt={v => `${v}%`} />
+                <Axes maxY={maxV} days={days} yFmt={v => `${v.toFixed(2)}%`} />
                 <rect x={PAD.l} width={W - PAD.l - PAD.r} y={yOf(0.3)} height={Math.max(0, yOf(0.1) - yOf(0.3))} fill={T.err} opacity="0.08" />
                 <path d={linePath(campSeries.map(p => ({ t: p.t, v: p.rate })), maxV)} fill="none" stroke={T.err} strokeWidth="2" />
               </>
