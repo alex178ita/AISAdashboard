@@ -3,6 +3,7 @@ import {
   RUNS_CSV_URL, FIRECRAWL_CSV_URL, EMAIL_STATS_CSV_URL, CAMPAIGNS_CSV_URL,
   A2_ENGAGEMENT_CSV_URL, B_FUNNEL_CSV_URL, REFRESH_MINUTES, LINKS, FLOWS, SERVICE_FLOWS, FAMILY,
 } from "./config.js";
+import BlogPanel from "./BlogPanel.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -75,9 +76,9 @@ function rowDay(row) {
 function Metric({ label, value, sub, color }) {
   return (
     <div style={{ minWidth: 78 }}>
-      <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 3 }}>{label}</div>
-      <div style={{ fontFamily: T.sans, fontSize: 20, fontWeight: 650, color: color || T.ink, lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.04em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontFamily: T.sans, fontSize: 23, fontWeight: 650, color: color || T.ink, lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -86,7 +87,7 @@ function LinkIcon() {
 }
 function DetailLink({ label, href, color }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: "#fff", background: color, padding: "6px 12px", borderRadius: 6, textDecoration: "none", opacity: 0.92 }}>
+    <a href={href} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, color: "#fff", background: color, padding: "6px 12px", borderRadius: 6, textDecoration: "none", opacity: 0.92 }}>
       {label}<LinkIcon />
     </a>
   );
@@ -96,13 +97,14 @@ function StatusDot({ status }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span style={{ width: 9, height: 9, borderRadius: 99, background: s.dot, boxShadow: `0 0 0 3px ${s.dot}22` }} />
-      <span style={{ fontFamily: T.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>{s.label}</span>
+      <span style={{ fontFamily: T.mono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>{s.label}</span>
     </span>
   );
 }
 
 function statsFor(runs, scenarioId) {
-  const r = runs.filter(x => String(x.flow_id) === String(scenarioId));
+  const ids = (Array.isArray(scenarioId) ? scenarioId : [scenarioId]).map(String);
+  const r = runs.filter(x => ids.includes(String(x.flow_id)));
   if (!r.length) return null;
   const ok = r.filter(x => (x.status || "").toLowerCase() === "success").length;
   const err = r.length - ok;
@@ -121,8 +123,8 @@ function FlowStrip({ flow, fam, data }) {
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${fam.color}`, borderRadius: 12, padding: "14px 18px 0", marginBottom: 12, opacity: isPlaceholder ? 0.6 : 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: isPlaceholder ? 12 : 14 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: fam.color, letterSpacing: "0.04em" }}>{flow.code}</span>
-          <span style={{ fontFamily: T.sans, fontWeight: 650, fontSize: 15, color: T.ink }}>{flow.name}</span>
+          <span style={{ fontFamily: T.mono, fontSize: 13.8, fontWeight: 700, color: fam.color, letterSpacing: "0.04em" }}>{flow.code}</span>
+          <span style={{ fontFamily: T.sans, fontWeight: 650, fontSize: 17.2, color: T.ink }}>{flow.name}</span>
         </div>
         <StatusDot status={status} />
       </div>
@@ -137,13 +139,13 @@ function FlowStrip({ flow, fam, data }) {
           </div>
         </>
       ) : (
-        <div style={{ paddingBottom: 14, fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>Reserved slot — this flow has not been built yet.</div>
+        <div style={{ paddingBottom: 14, fontFamily: T.mono, fontSize: 13.8, color: T.inkSoft }}>Reserved slot — this flow has not been built yet.</div>
       )}
     </div>
   );
 }
 
-const inp = { fontFamily: T.mono, fontSize: 11, padding: "5px 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "#fff", color: T.ink };
+const inp = { fontFamily: T.mono, fontSize: 12.6, padding: "5px 8px", border: `1px solid ${T.line}`, borderRadius: 6, background: "#fff", color: T.ink };
 
 // One-click ranges, so the common cases don't need the date pickers at all.
 const PRESETS = [
@@ -165,12 +167,12 @@ function RecapItem({ name, status, note, runs }) {
     <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", flexWrap: "wrap", padding: "3px 0", opacity: off ? 0.62 : 1 }}>
       <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 210, flex: "0 0 auto" }}>
         <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, flex: "0 0 auto" }} />
-        <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, color: "#fff" }}>{name}</span>
+        <span style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 600, color: "#fff" }}>{name}</span>
       </span>
-      <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: s.dot, minWidth: 104, flex: "0 0 auto" }}>
+      <span style={{ fontFamily: T.mono, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: s.dot, minWidth: 104, flex: "0 0 auto" }}>
         {s.label}
       </span>
-      <span style={{ fontFamily: T.mono, fontSize: 10, color: "#8A94A6" }}>
+      <span style={{ fontFamily: T.mono, fontSize: 11.5, color: "#8A94A6" }}>
         {note ? note + " · " : ""}{runs ? `${runs.total} runs · last ${fmtWhen(runs.last?.started_at)}` : "no runs yet"}
       </span>
     </div>
@@ -188,8 +190,8 @@ function BFunnelPanel({ fam, f }) {
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${fam.color}`, borderRadius: 12, padding: "14px 18px", marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontFamily: T.sans, fontWeight: 700, fontSize: 14, color: T.ink }}>LinkedIn outreach funnel</span>
-        <span style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft }}>{f.hasData ? "from KPI_Log" : "awaiting data — publish the KPI_Log tab as CSV and set B_FUNNEL_CSV_URL"}</span>
+        <span style={{ fontFamily: T.sans, fontWeight: 700, fontSize: 16.1, color: T.ink }}>LinkedIn outreach funnel</span>
+        <span style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft }}>{f.hasData ? "from KPI_Log" : "awaiting data — publish the KPI_Log tab as CSV and set B_FUNNEL_CSV_URL"}</span>
       </div>
       <div style={{ display: "flex", gap: 26, flexWrap: "wrap" }}>
         {tiles.map((m, i) => (<Metric key={i} label={m.label} value={m.value} sub={m.sub} color={m.color} />))}
@@ -327,39 +329,40 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap'); * { box-sizing: border-box; } a { color: inherit; }`}</style>
-      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "28px 22px 60px" }}>
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "30px 26px 64px" }}>
 
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <img src="https://www.aisearchaudit.ai/wp-content/uploads/2026/07/ai-search-audit-logo-no-tagline.png" alt="AI Search Audit" style={{ height: 42, width: "auto", display: "block" }} />
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>Automation Flows — KPI Dashboard</h1>
-              <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 3 }}>{updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}</div>
+              <h1 style={{ fontSize: 27.6, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>Automation Flows — KPI Dashboard</h1>
+              <div style={{ fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft, marginTop: 3 }}>{updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}</div>
             </div>
           </div>
-          <button onClick={load} disabled={loading} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: loading ? T.inkSoft : T.accent, color: "#fff", cursor: loading ? "wait" : "pointer", minWidth: 122, transition: "background 0.15s" }}>{loading ? "Refreshing…" : "Refresh now"}</button>
+          <button onClick={load} disabled={loading} style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: loading ? T.inkSoft : T.accent, color: "#fff", cursor: loading ? "wait" : "pointer", minWidth: 122, transition: "background 0.15s" }}>{loading ? "Refreshing…" : "Refresh now"}</button>
         </header>
 
-        {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
+        {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
-          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>
+          <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>
             Make.com flows — status{rangeOn ? ` · ${fromDate || "start"} → ${toDate || "today"}` : ""}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-            <RecapItem name="A1 · Webhook on sign-up" status="standby" note="off in Make — no sign-up trigger" runs={statsFor(runsF, "6350489")} />
+            <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" runs={statsFor(runsF, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runsF, "6446272")} />
-            <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–09:00" runs={statsFor(runsF, "6513141")} />
+            <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–10:00" runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runsF, "6359563")} />
+            <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h" runs={statsFor(runsF, ["6871616", "6864777", "6871324"])} />
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
-          <span style={{ fontFamily: T.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>Show</span>
+          <span style={{ fontFamily: T.mono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>Show</span>
           {["A", "B", "C", "D"].map(fk => (
-            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}>{fk} — {FAMILY[fk].name}</button>
+            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}>{fk} — {FAMILY[fk].name}</button>
           ))}
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
             {PRESETS.map(p => {
               const [pf, pt] = p.get();
               const on = fromDate === pf && toDate === pt;
@@ -380,7 +383,7 @@ export default function App() {
           {/* Explicit feedback: the range applies the moment a date changes — there
               is no Apply/Enter step — and it now hides rows from EVERY KPI, so it
               has to be obvious when one is active. */}
-          <div style={{ width: "100%", fontFamily: T.mono, fontSize: 10.5, color: rangeOn ? T.accent : T.inkSoft, borderTop: `1px dashed ${T.line}`, paddingTop: 9, marginTop: 2 }}>
+          <div style={{ width: "100%", fontFamily: T.mono, fontSize: 12.1, color: rangeOn ? T.accent : T.inkSoft, borderTop: `1px dashed ${T.line}`, paddingTop: 9, marginTop: 2 }}>
             {rangeOn
               ? `Filter active — ${fromDate || "start"} → ${toDate || "today"} · showing ${runsF.length} of ${runs.length} runs · applied automatically, no Enter needed · newer runs outside this range are hidden until you clear it`
               : "No date filter — showing all data. Pick a range (or a preset) and every KPI on the page follows it; it applies as soon as you choose a date."}
@@ -395,9 +398,10 @@ export default function App() {
             <section key={fk} style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "18px 2px 10px" }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: fam.color }} />
-                <h2 style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.02em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
+                <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 700, letterSpacing: "0.02em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
               </div>
               {fk === "B" && <BFunnelPanel fam={fam} f={bFunnel} />}
+              {fk === "C" && <BlogPanel />}
               {flowsIn.map(flow => (<FlowStrip key={flow.code} flow={flow} fam={fam} data={flow.placeholder ? null : metricsForFlow(flow)} />))}
             </section>
           );
@@ -406,20 +410,20 @@ export default function App() {
         <section style={{ marginTop: 26 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 10px" }}>
             <span style={{ width: 10, height: 10, borderRadius: 3, background: FAMILY.S.color }} />
-            <h2 style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 700, color: T.ink, margin: 0 }}>Service Make.com flows</h2>
+            <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 700, color: T.ink, margin: 0 }}>Service Make.com flows</h2>
           </div>
           <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(265px, 1fr))", gap: 14 }}>
               {SERVICE_FLOWS.map(sf => {
                 return (
                   <div key={sf.code} style={{ border: `1px solid ${T.line}`, borderRadius: 9, padding: "11px 13px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: FAMILY.S.color }}>{sf.code}</span>
+                      <span style={{ fontFamily: T.mono, fontSize: 13.8, fontWeight: 700, color: FAMILY.S.color }}>{sf.code}</span>
                       <StatusDot status={sf.status || "standby"} />
                     </div>
-                    <div style={{ fontFamily: T.sans, fontSize: 12.5, fontWeight: 600, color: T.ink, marginBottom: 8 }}>{sf.name}</div>
-                    {sf.code === "K1" && fcAgg && (<div style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginBottom: 8 }}>Firecrawl: {fcAgg.remaining} credits{fcAgg.burn ? ` · ~${fcAgg.burn.toFixed(0)}/day` : ""}</div>)}
-                    <a href={sf.makeUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.sans, fontSize: 11, fontWeight: 600, color: FAMILY.S.color, textDecoration: "none" }}>See make.com {sf.code} flow<LinkIcon /></a>
+                    <div style={{ fontFamily: T.sans, fontSize: 14.4, fontWeight: 600, color: T.ink, marginBottom: 8 }}>{sf.name}</div>
+                    {sf.code === "K1" && fcAgg && (<div style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft, marginBottom: 8 }}>Firecrawl: {fcAgg.remaining} credits{fcAgg.burn ? ` · ~${fcAgg.burn.toFixed(0)}/day` : ""}</div>)}
+                    <a href={sf.makeUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.sans, fontSize: 12.6, fontWeight: 600, color: FAMILY.S.color, textDecoration: "none" }}>See make.com {sf.code} flow<LinkIcon /></a>
                   </div>
                 );
               })}
@@ -427,7 +431,7 @@ export default function App() {
           </div>
         </section>
 
-        <footer style={{ fontFamily: T.mono, fontSize: 10, color: T.inkSoft, marginTop: 28, textAlign: "center" }}>Data: Google Sheet «AISA - KPI Log» + Zoho Analytics · deduplicated by execution_id · Kleecks internal</footer>
+        <footer style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft, marginTop: 28, textAlign: "center" }}>Data: Google Sheet «AISA - KPI Log» + Zoho Analytics · deduplicated by execution_id · Kleecks internal</footer>
       </div>
     </div>
   );
