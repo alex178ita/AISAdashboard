@@ -7,6 +7,7 @@
 import { DOC_URL } from "./config.js";
 import { T, NavBar, PageActions, PrintStyle, LinkIcon } from "./shared.jsx";
 
+// The written documentation set (PDF/XLSX in the Drive folder).
 const DOCS = [
   { title: "Marketing Automation — User & Technical Manual", meta: "PDF · 74 pages · 15 chapters", desc: "The complete operating manual: architecture, every Make.com flow, the KPI model, and day-to-day operating procedures." },
   { title: "KPI Monitoring Documentation", meta: "PDF · v1.5", desc: "How each KPI is defined, collected and logged — the specification behind this dashboard and the attribution model." },
@@ -14,6 +15,17 @@ const DOCS = [
   { title: "Flow C2 — Technical Documentation & Verification", meta: "PDF · v1.1", desc: "Blog automation: topic radar, blog writer and publisher, with the verification sheet that proves each step." },
   { title: "Design vs Delivery", meta: "PDF · v1.0", desc: "What was specified against what was built — the reconciliation record for the automation programme." },
   { title: "Tools Cost Summary", meta: "XLSX · v3", desc: "Per-tool running costs across the whole stack (Make, Firecrawl, ZeptoMail, Zoho, Anthropic and the rest)." },
+];
+
+// The components of the running system — so the hub names the whole estate, not
+// only the paperwork. Colours mirror the flow families on the main dashboard.
+const COMPONENTS = [
+  { code: "A", color: "#2FB980", title: "Family A — AISA Audit & Outreach", desc: "The audit-on-sign-up webhook (A1) and the cold-outreach email engine (A2) that emails prospects a Firecrawl-based AI readiness audit." },
+  { code: "B", color: "#E6568F", title: "Family B — LinkedIn ABM", desc: "The full LinkedIn account-based sequence: PhantomBuster ingestion, CRM dedup, connection invites, the Claude DM writer with review gate, sending and reply alerting." },
+  { code: "C", color: "#5B63D3", title: "Family C — Content Generation", desc: "The social writer (C1) into Zoho Social and the blog pipeline (C2): topic radar, blog writer to WordPress draft, and the approve-to-live publisher." },
+  { code: "MD", color: "#8A94A6", title: "MD Consolidator", desc: "The service flow that consolidates the automation’s Markdown outputs — the shared documentation and content substrate the other flows draw on." },
+  { code: "K", color: "#8A94A6", title: "Service collectors (K1–K5)", desc: "The KPI collectors (Make + Firecrawl, ZeptoMail events, Campaigns stats), plus K5, the deterministic redemption-attribution engine feeding the KPIs page." },
+  { code: "DASH", color: "#12151A", title: "This dashboard", desc: "The React/Vercel front end you are reading now: flow status and run metrics, redemption KPIs, statistical graphs and this documentation hub — refreshed from the published KPI-log tabs." },
 ];
 
 export default function Docs() {
@@ -39,18 +51,30 @@ export default function Docs() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, background: T.ink, borderRadius: 12, padding: "18px 22px", marginBottom: 22 }}>
           <div>
             <div style={{ fontFamily: T.sans, fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 4 }}>The complete documentation suite</div>
-            <div style={{ fontFamily: T.mono, fontSize: 12.6, color: "#9AA4B0" }}>Maintained in British English · Kleecks internal</div>
+            <div style={{ fontFamily: T.mono, fontSize: 12.6, color: "#9AA4B0" }}>Maintained in British English · Kleecks internal · all files in the shared Drive folder</div>
           </div>
           <a href={DOC_URL} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: T.sans, fontSize: 14.6, fontWeight: 600, color: T.ink, background: T.accent, padding: "10px 18px", borderRadius: 8, textDecoration: "none" }}>Open the documentation folder<LinkIcon /></a>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+        <h2 style={{ fontFamily: T.sans, fontSize: 15.5, fontWeight: 700, color: T.ink, margin: "6px 2px 12px" }}>Documents</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16, marginBottom: 30 }}>
           {DOCS.map((d, i) => (
             <a key={i} href={DOC_URL} target="_blank" rel="noreferrer" className="kpi-card" style={{ ...card, textDecoration: "none", display: "block" }}>
               <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.05em", textTransform: "uppercase", color: T.accent, marginBottom: 8 }}>{d.meta}</div>
               <div style={{ fontFamily: T.sans, fontSize: 16.5, fontWeight: 700, color: T.ink, marginBottom: 8, lineHeight: 1.3 }}>{d.title}</div>
               <div style={{ fontFamily: T.sans, fontSize: 13.8, color: T.inkSoft, lineHeight: 1.55 }}>{d.desc}</div>
             </a>
+          ))}
+        </div>
+
+        <h2 style={{ fontFamily: T.sans, fontSize: 15.5, fontWeight: 700, color: T.ink, margin: "6px 2px 12px" }}>System components</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+          {COMPONENTS.map((c, i) => (
+            <div key={i} className="kpi-card" style={{ ...card, borderLeft: `5px solid ${c.color}` }}>
+              <div style={{ fontFamily: T.mono, fontSize: 12.5, fontWeight: 700, letterSpacing: "0.04em", color: c.color, marginBottom: 8 }}>{c.code}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 16.5, fontWeight: 700, color: T.ink, marginBottom: 8, lineHeight: 1.3 }}>{c.title}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 13.8, color: T.inkSoft, lineHeight: 1.55 }}>{c.desc}</div>
+            </div>
           ))}
         </div>
 

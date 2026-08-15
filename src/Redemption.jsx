@@ -44,7 +44,17 @@ async function fetchCSV(url) {
 }
 const num = v => { const n = parseFloat(String(v ?? "").replace(/[^\d.-]/g, "")); return isNaN(n) ? 0 : n; };
 const pct = (a, b) => (b ? (a / b) * 100 : null);
-const fmtPct = p => (p == null ? "—" : `${p.toFixed(2)}%`);
+// Redemption rates are small by nature (a handful of registrations against
+// hundreds or thousands contacted), so a fixed 2-decimal format would show
+// 0.00% for a real single conversion. Scale the precision to the magnitude:
+// below 1% show 3 decimals, below 0.1% show 4, so the first genuine redeemer
+// is always visible rather than rounded away.
+const fmtPct = p => {
+  if (p == null) return "—";
+  if (p === 0) return "0%";
+  const d = p < 0.1 ? 4 : p < 1 ? 3 : 2;
+  return `${p.toFixed(d)}%`;
+};
 const lc = s => String(s ?? "").trim().toLowerCase();
 
 // latest value of `sent` for a given channel in the attribution tab
@@ -211,6 +221,14 @@ export default function Redemption() {
           legend="A single exact-email match: a person registered with the very address we emailed. Engagement (opens · clicks · replies) is drawn from the a2_engagement tab; clicks are the de-botted Analytics figure."
           detail={{ label: "See details in Zoho Campaigns", href: LINKS.campaignsReport }}
         />
+
+        {/* transparency note on the A2 denominator */}
+        <div className="avoid-break" style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.warnSoft, border: `1px solid ${T.warn}33`, borderRadius: 10, padding: "12px 16px", marginTop: -8, marginBottom: 18 }}>
+          <span style={{ fontFamily: T.mono, fontSize: 15, color: T.warn, lineHeight: 1.2, flex: "0 0 auto" }}>ⓘ</span>
+          <span style={{ fontFamily: T.sans, fontSize: 13.2, color: T.inkSoft, lineHeight: 1.6 }}>
+            The A2 <strong>sent</strong> figure is the count logged by the nightly collector, not a live tally. Because the cold-outreach flow keeps sending during the day, the live list can be a few dozen ahead of this number until the collector next runs — a slight, expected lag on the total that does not materially affect the rate.
+          </span>
+        </div>
 
         {/* method note */}
         <div className="avoid-break" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "16px 20px", marginTop: 6 }}>

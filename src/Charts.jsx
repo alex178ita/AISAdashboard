@@ -351,6 +351,27 @@ export default function Charts() {
           )}
         </Card>
 
+        <section style={{ marginTop: 26 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 10px" }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: FAMILY.S.color }} />
+            <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 700, color: T.ink, margin: 0 }}>Service &amp; collector flows</h2>
+          </div>
+          <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(255px, 1fr))", gap: 14 }}>
+              {SERVICE_FLOWS.map(sf => (
+                <div key={sf.code} style={{ border: `1px solid ${T.line}`, borderRadius: 9, padding: "11px 13px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontFamily: T.mono, fontSize: 13.4, fontWeight: 700, color: FAMILY.S.color }}>{sf.code}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: sf.status === "active" ? "#1FA971" : "#C9A227" }}>{sf.status}</span>
+                  </div>
+                  <div style={{ fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, color: T.ink, marginBottom: 8, lineHeight: 1.3 }}>{sf.name}</div>
+                  <a href={sf.makeUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.sans, fontSize: 12.4, fontWeight: 600, color: FAMILY.S.color, textDecoration: "none" }}>See make.com {sf.code} flow<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg></a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <footer style={{ fontFamily: T.mono, fontSize: 10.5, color: T.inkSoft, marginTop: 28, textAlign: "center" }}>
           Data: Google Sheet «AISA - KPI Log» · de-duplicated by execution_id · Kleecks internal
         </footer>

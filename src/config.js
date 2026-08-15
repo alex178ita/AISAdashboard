@@ -94,6 +94,10 @@ export const SERVICE_FLOWS = [
   { code: "K1", name: "KPI collector (Make + Firecrawl)", scenarioId: "6441414", status: "active", makeUrl: `${MAKE_BASE}/6441414/edit` },
   { code: "K2", name: "ZeptoMail events → KPI Log",       scenarioId: "6441412", status: "active", makeUrl: `${MAKE_BASE}/6441412/edit` },
   { code: "K3", name: "Campaigns stats collector",        scenarioId: "6448767", status: "active", makeUrl: `${MAKE_BASE}/6448767/edit` },
+  { code: "K4B", name: "Sent-B counter → attribution",    scenarioId: "6920156", status: "active", makeUrl: `${MAKE_BASE}/6920156/edit` },
+  { code: "K4A2", name: "Sent-A2 + engagement → attribution", scenarioId: "6936993", status: "active", makeUrl: `${MAKE_BASE}/6936993/edit` },
+  { code: "K5", name: "Redemption attribution engine",    scenarioId: "6951866", status: "active", makeUrl: `${MAKE_BASE}/6951866/edit` },
+  { code: "R1", name: "WordPress sign-ups → Registrations", scenarioId: "6955561", status: "active", makeUrl: `${MAKE_BASE}/6955561/edit` },
   { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
   { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", status: "standby", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
