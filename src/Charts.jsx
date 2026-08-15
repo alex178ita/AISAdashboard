@@ -13,6 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RUNS_CSV_URL, FIRECRAWL_CSV_URL, CAMPAIGNS_CSV_URL, FLOWS, SERVICE_FLOWS, FAMILY } from "./config.js";
+import { NavBar, PageActions, PrintStyle } from "./shared.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -222,20 +223,25 @@ export default function Charts() {
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap'); * { box-sizing: border-box; }`}</style>
+      <PrintStyle />
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: "30px 26px 64px" }}>
 
-        <div style={{ marginBottom: 12, fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
-          <a href="#/" style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>&larr; Back</a> to the dashboard
-        </div>
-
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
-          <div>
-            <h1 style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>Statistical graphs over time</h1>
-            <div style={{ fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft, marginTop: 3 }}>
-              Trends behind the KPI tiles · same sources, de-duplicated by execution_id
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <img src="https://www.aisearchaudit.ai/wp-content/uploads/2026/07/ai-search-audit-logo-no-tagline.png" alt="AI Search Audit" style={{ height: 42, width: "auto", display: "block" }} />
+            <div>
+              <h1 style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>AISA Automated Marketing Flows</h1>
+              <div style={{ fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft, marginTop: 3 }}>
+                Statistical graphs over time · same sources, de-duplicated by execution_id
+              </div>
             </div>
           </div>
+          <PageActions />
+        </header>
+
+        <NavBar />
+
+        <header className="no-print" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
           <div style={{ display: "flex", gap: 8 }}>
             {RANGES.map(r => (
               <button key={r.label} onClick={() => setRange(r.days)}
@@ -247,6 +253,7 @@ export default function Charts() {
             ))}
           </div>
         </header>
+
 
         {err && <div style={{ background: "#FBE9E8", border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 12, marginBottom: 16 }}>Error loading data: {err}</div>}
         {loading && <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft, marginBottom: 16 }}>Loading…</div>}

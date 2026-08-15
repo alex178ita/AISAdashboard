@@ -5,6 +5,9 @@ import {
 } from "./config.js";
 import BlogPanel from "./BlogPanel.jsx";
 import Charts from "./Charts.jsx";
+import Redemption from "./Redemption.jsx";
+import Docs from "./Docs.jsx";
+import { NavBar, PageActions } from "./shared.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -336,6 +339,8 @@ export default function App() {
   const visibleFlows = FLOWS.filter(f => visibleFams[f.family]);
 
   if (route.startsWith("#/charts")) return <Charts />;
+  if (route.startsWith("#/kpis")) return <Redemption />;
+  if (route.startsWith("#/docs")) return <Docs />;
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>
@@ -346,28 +351,19 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <img src="https://www.aisearchaudit.ai/wp-content/uploads/2026/07/ai-search-audit-logo-no-tagline.png" alt="AI Search Audit" style={{ height: 42, width: "auto", display: "block" }} />
             <div>
-              <h1 style={{ fontSize: 27.6, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>Automation Flows — KPI Dashboard</h1>
-              <div style={{ fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft, marginTop: 3 }}>{updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}</div>
+              <h1 style={{ fontSize: 27.6, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>AISA Automated Marketing Flows</h1>
+              <div style={{ fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft, marginTop: 3 }}>Flows Data &amp; Stats · {updatedAt ? `updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every ${REFRESH_MINUTES} min` : "Loading…"}</div>
             </div>
           </div>
-          <button onClick={load} disabled={loading} style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: loading ? T.inkSoft : T.accent, color: "#fff", cursor: loading ? "wait" : "pointer", minWidth: 122, transition: "background 0.15s" }}>{loading ? "Refreshing…" : "Refresh now"}</button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <PageActions />
+            <button onClick={load} disabled={loading} className="no-print" style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 600, padding: "9px 16px", borderRadius: 8, border: "none", background: loading ? T.inkSoft : T.accent, color: "#fff", cursor: loading ? "wait" : "pointer", minWidth: 122, transition: "background 0.15s" }}>{loading ? "Refreshing…" : "Refresh now"}</button>
+          </div>
         </header>
 
-        {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
+        <NavBar />
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12, fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
-          <span>
-            Full tech &amp; user documentation{" "}
-            <a href="https://drive.google.com/drive/folders/1j9Kg76JddbTKo3_OZw80ZQ1Qc3WNkXa1?usp=share_link"
-               target="_blank" rel="noreferrer"
-               style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>here</a>
-          </span>
-          <span>
-            Statistical{" "}
-            <a href="#/charts" style={{ color: T.accent, fontWeight: 700, textDecoration: "underline" }}>graphs</a>
-            {" "}over time
-          </span>
-        </div>
+        {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
           <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>

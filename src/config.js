@@ -10,6 +10,16 @@ export const CAMPAIGNS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX
 // Publish the query table as CSV in Zoho Analytics and paste the URL here.
 export const A2_ENGAGEMENT_CSV_URL = ""; // <-- paste the published Analytics CSV URL
 
+// === REDEMPTION ATTRIBUTION (K5 + K4) ===
+// Three published tabs of the "AISA - KPI Log" sheet that drive the Redemption KPIs page.
+//   attribution      · logged_at | channel | sent            (one row per channel per night; channel = B | A2)
+//   redemption_detail · logged_at | channel | name | email | company | master_contact | match_type
+//                       (one row per matched registrant; match_type = persona | azienda | «» for A2)
+//   a2_engagement    · opens | clicks | replies | delivered | last_update   (manually maintained + Analytics)
+export const ATTRIBUTION_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9Wuv7UIv1AsXCeM8IKD4VZl5VZDWEYOKy8qVvEeC1tUX1rwlvm0EmuxNvRJvh2qTlee2QcMeLEJJW/pub?gid=623512043&single=true&output=csv";
+export const REDEMPTION_DETAIL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9Wuv7UIv1AsXCeM8IKD4VZl5VZDWEYOKy8qVvEeC1tUX1rwlvm0EmuxNvRJvh2qTlee2QcMeLEJJW/pub?gid=1936950578&single=true&output=csv";
+export const A2_ENGAGEMENT_TAB_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9Wuv7UIv1AsXCeM8IKD4VZl5VZDWEYOKy8qVvEeC1tUX1rwlvm0EmuxNvRJvh2qTlee2QcMeLEJJW/pub?gid=565163290&single=true&output=csv";
+
 // Flow B — LinkedIn ABM funnel.
 // Publish the "KPI_Log" tab of the "AISA_Flusso_B_Fogli" workbook as CSV and paste the URL here.
 // Expected columns: data · evento · linkedin_url · dettaglio
@@ -37,6 +47,20 @@ export const LINKS = {
   airtableBase: "https://airtable.com/appN8ORvz4lZKyjO1",
   blogSection: "https://www.aisearchaudit.ai/blog/",
 };
+
+// Full technical & user documentation (Google Drive folder, opens in a new tab)
+export const DOC_URL = "https://drive.google.com/drive/folders/1j9Kg76JddbTKo3_OZw80ZQ1Qc3WNkXa1?usp=share_link";
+
+// Public URL of the deployed dashboard — used by the "Share via email" button.
+export const DASHBOARD_URL = "https://ais-adashboard.vercel.app/";
+
+// Top navigation — hash routes. The four views the dashboard is split into.
+export const NAV = [
+  { key: "",         label: "Flows Data & Stats" },
+  { key: "#/kpis",   label: "Redemption KPIs" },
+  { key: "#/docs",   label: "Full Tech & User Documentation" },
+  { key: "#/charts", label: "Statistical graphs over time" },
+];
 
 // Flow registry — the backbone of the layout.
 // family drives the colour; scenarioId links to Make; status: active | standby | invalid | soon
