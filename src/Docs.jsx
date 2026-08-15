@@ -7,12 +7,11 @@
 import { DOC_URL } from "./config.js";
 import { T, NavBar, PageActions, PrintStyle, LinkIcon } from "./shared.jsx";
 
-// The written documentation set (PDF/XLSX in the Drive folder).
+// The written documentation set (PDF/XLSX in the Drive folder). The KPI, Flow B
+// and Flow C2 papers are not repeated here — they map to the system components
+// listed below; this keeps Documents to the cross-cutting deliverables.
 const DOCS = [
   { title: "Marketing Automation — User & Technical Manual", meta: "PDF · 74 pages · 15 chapters", desc: "The complete operating manual: architecture, every Make.com flow, the KPI model, and day-to-day operating procedures." },
-  { title: "KPI Monitoring Documentation", meta: "PDF · v1.5", desc: "How each KPI is defined, collected and logged — the specification behind this dashboard and the attribution model." },
-  { title: "Flow B — Technical Documentation", meta: "PDF · v2", desc: "The LinkedIn ABM sequence end to end: ingestion, CRM dedup, connection, DM writer and send, reply alerting." },
-  { title: "Flow C2 — Technical Documentation & Verification", meta: "PDF · v1.1", desc: "Blog automation: topic radar, blog writer and publisher, with the verification sheet that proves each step." },
   { title: "Design vs Delivery", meta: "PDF · v1.0", desc: "What was specified against what was built — the reconciliation record for the automation programme." },
   { title: "Tools Cost Summary", meta: "XLSX · v3", desc: "Per-tool running costs across the whole stack (Make, Firecrawl, ZeptoMail, Zoho, Anthropic and the rest)." },
 ];

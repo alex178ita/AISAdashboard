@@ -20,6 +20,12 @@ export const ATTRIBUTION_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PA
 export const REDEMPTION_DETAIL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9Wuv7UIv1AsXCeM8IKD4VZl5VZDWEYOKy8qVvEeC1tUX1rwlvm0EmuxNvRJvh2qTlee2QcMeLEJJW/pub?gid=1936950578&single=true&output=csv";
 export const A2_ENGAGEMENT_TAB_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9Wuv7UIv1AsXCeM8IKD4VZl5VZDWEYOKy8qVvEeC1tUX1rwlvm0EmuxNvRJvh2qTlee2QcMeLEJJW/pub?gid=565163290&single=true&output=csv";
 
+// Flow B Master list (AISA_Flusso_B_Fogli). Column G "stato" carries the LinkedIn
+// funnel state per contact: invito_inviato · connesso_no_dm · dm_inviato · risposto.
+// Used on the Redemption page to show the B "Replied" figure (stato = risposto),
+// symmetric with the A2 email-reply figure.
+export const B_MASTER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2QNJv9wz9vGSFh_VioH1mo8XFWo_CFwnqpONPMOGZ1OA0kC4sax4PEFL8SZWKzqEZJmR4HM_wiLXL/pub?gid=2065401423&single=true&output=csv";
+
 // Flow B — LinkedIn ABM funnel.
 // Publish the "KPI_Log" tab of the "AISA_Flusso_B_Fogli" workbook as CSV and paste the URL here.
 // Expected columns: data · evento · linkedin_url · dettaglio

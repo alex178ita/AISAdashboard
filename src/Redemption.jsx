@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ATTRIBUTION_CSV_URL, REDEMPTION_DETAIL_CSV_URL, A2_ENGAGEMENT_TAB_CSV_URL,
+  ATTRIBUTION_CSV_URL, REDEMPTION_DETAIL_CSV_URL, A2_ENGAGEMENT_TAB_CSV_URL, B_MASTER_CSV_URL,
   REFRESH_MINUTES, FAMILY, LINKS,
 } from "./config.js";
 import { T, NavBar, PageActions, PrintStyle, LinkIcon } from "./shared.jsx";
@@ -44,15 +44,14 @@ async function fetchCSV(url) {
 }
 const num = v => { const n = parseFloat(String(v ?? "").replace(/[^\d.-]/g, "")); return isNaN(n) ? 0 : n; };
 const pct = (a, b) => (b ? (a / b) * 100 : null);
-// Redemption rates are small by nature (a handful of registrations against
-// hundreds or thousands contacted), so a fixed 2-decimal format would show
-// 0.00% for a real single conversion. Scale the precision to the magnitude:
-// below 1% show 3 decimals, below 0.1% show 4, so the first genuine redeemer
-// is always visible rather than rounded away.
+// Redemption and reply rates are small by nature (a handful against hundreds or
+// thousands), so a fixed 2-decimal format would collapse a real single event to
+// 0.00%. Scale precision to magnitude — and keep 3 decimals even at exactly zero,
+// so an empty rate reads "0.000%" and sits visually alongside the live ones
+// rather than looking like a different, blunter number.
 const fmtPct = p => {
   if (p == null) return "—";
-  if (p === 0) return "0%";
-  const d = p < 0.1 ? 4 : p < 1 ? 3 : 2;
+  const d = (p > 0 && p < 0.1) ? 4 : (p >= 1 ? 2 : 3);
   return `${p.toFixed(d)}%`;
 };
 const lc = s => String(s ?? "").trim().toLowerCase();
@@ -127,6 +126,7 @@ export default function Redemption() {
   const [attr, setAttr] = useState([]);
   const [detail, setDetail] = useState([]);
   const [eng, setEng] = useState([]);
+  const [master, setMaster] = useState([]);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -134,10 +134,11 @@ export default function Redemption() {
   async function load() {
     try {
       setError(null); setLoading(true);
-      const [a, d, e] = await Promise.all([
-        fetchCSV(ATTRIBUTION_CSV_URL), fetchCSV(REDEMPTION_DETAIL_CSV_URL), fetchCSV(A2_ENGAGEMENT_TAB_CSV_URL),
+      const [a, d, e, m] = await Promise.all([
+        fetchCSV(ATTRIBUTION_CSV_URL), fetchCSV(REDEMPTION_DETAIL_CSV_URL),
+        fetchCSV(A2_ENGAGEMENT_TAB_CSV_URL), fetchCSV(B_MASTER_CSV_URL),
       ]);
-      setAttr(a); setDetail(d); setEng(e); setUpdatedAt(new Date());
+      setAttr(a); setDetail(d); setEng(e); setMaster(m); setUpdatedAt(new Date());
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -148,9 +149,14 @@ export default function Redemption() {
     const rows = detail.filter(r => lc(r.channel) === "b");
     const persona = rows.filter(r => lc(r.match_type) === "persona").length;
     const azienda = rows.filter(r => lc(r.match_type) === "azienda").length;
-    return { sent, persona, azienda, total: persona + azienda,
-      ratePrimary: pct(persona, sent), rateSecondary: pct(azienda, sent) };
-  }, [attr, detail]);
+    // Replied / funnel states come from the Master list column "stato".
+    const replied = master.filter(r => lc(r.stato) === "risposto").length;
+    const connected = master.filter(r => lc(r.stato) === "connesso_no_dm").length;
+    const dmSent = master.filter(r => lc(r.stato) === "dm_inviato").length;
+    return { sent, persona, azienda, total: persona + azienda, replied, connected, dmSent,
+      ratePrimary: pct(persona, sent), rateSecondary: pct(azienda, sent),
+      rateReplied: pct(replied, sent), rateRedeemed: pct(persona + azienda, sent) };
+  }, [attr, detail, master]);
 
   const A2 = useMemo(() => {
     const sent = latestSent(attr, "A2");
@@ -162,7 +168,8 @@ export default function Redemption() {
     const clicks = eRow ? num(eRow.clicks) : aRow ? num(aRow.clicks) : 0;
     const replies = eRow ? num(eRow.replies) : aRow ? num(aRow.replies) : 0;
     const delivered = eRow ? num(eRow.delivered) : 0;
-    return { sent, redeemed, rate: pct(redeemed, sent), opens, clicks, replies, delivered };
+    return { sent, redeemed, opens, clicks, replies, delivered,
+      rateReplied: pct(replies, sent), rateRedeemed: pct(redeemed, sent) };
   }, [attr, detail, eng]);
 
   const famB = FAMILY.B, famA = FAMILY.A;
@@ -187,38 +194,40 @@ export default function Redemption() {
 
         {error && (<div className="no-print" style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that attribution, redemption_detail and a2_engagement are published to the web as CSV.</div>)}
 
-        <p style={{ fontFamily: T.sans, fontSize: 15, color: T.inkSoft, lineHeight: 1.6, maxWidth: 780, marginBottom: 22 }}>
-          Redemption measures the share of the people <strong>each channel actually contacted</strong> who then registered on aisearchaudit.ai — always against that channel’s own sent count, not the total sign-up list.
+        <p style={{ fontFamily: T.sans, fontSize: 15, color: T.inkSoft, lineHeight: 1.6, maxWidth: 820, marginBottom: 22 }}>
+          Two headline figures per channel, on the same footing. <strong>Replied</strong> is engagement — someone reacted to the outreach. <strong>Redeemed</strong> is the outcome that matters — they went on to register on aisearchaudit.ai. Both are measured against the number of people <strong>each channel actually contacted</strong>, never the total sign-up list.
         </p>
 
         {/* Channel B */}
         <ChannelCard
           fam={famB} code="B" title="LinkedIn ABM"
           subtitle={B.sent != null ? `${B.sent} contacts direct-messaged` : "awaiting attribution data"}
-          primary={{ label: "Primary rate — person", value: fmtPct(B.ratePrimary), sub: `${B.persona} of ${B.sent ?? "—"} · surname + first name` }}
-          secondary={{ label: "Secondary rate — company", value: fmtPct(B.rateSecondary), sub: `${B.azienda} of ${B.sent ?? "—"} · surname + company` }}
+          primary={{ label: "Replied", value: fmtPct(B.rateReplied), sub: `${B.replied} of ${B.sent ?? "—"} · replied to the DM` }}
+          secondary={{ label: "Redeemed", value: fmtPct(B.rateRedeemed), sub: `${B.total} of ${B.sent ?? "—"} · registered on AISA` }}
           tiles={[
             { label: "Contacted (sent)", value: B.sent ?? "—" },
-            { label: "Redeemed — person", value: B.persona, color: famB.color },
-            { label: "Redeemed — company", value: B.azienda, color: famB.color },
-            { label: "Total redeemed", value: B.total },
+            { label: "Connected", value: B.connected, sub: "accepted, no DM yet" },
+            { label: "Replied", value: B.replied, color: famB.color },
+            { label: "Redeemed — person", value: B.persona, color: famB.color, sub: `${fmtPct(B.ratePrimary)} · primary` },
+            { label: "Redeemed — company", value: B.azienda, color: famB.color, sub: `${fmtPct(B.rateSecondary)} · secondary` },
           ]}
-          legend="Primary and secondary are reported separately, never summed. Primary = surname and first name both match a Master contact; secondary = surname and company match but the first name does not."
+          legend="Replied counts Master state «risposto». Redeemed splits into primary (surname + first name) and secondary (surname + company), reported separately and never summed. «Connected» (accepted the invite but not yet messaged) is shown for funnel context."
         />
 
         {/* Channel A2 */}
         <ChannelCard
           fam={famA} code="A2" title="Cold outreach email"
           subtitle={A2.sent != null ? `${A2.sent.toLocaleString("en-GB")} emails sent` : "awaiting attribution data"}
-          primary={{ label: "Redemption rate", value: fmtPct(A2.rate), sub: `${A2.redeemed} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · exact-email match` }}
+          primary={{ label: "Replied", value: fmtPct(A2.rateReplied), sub: `${A2.replies} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · replied to the email` }}
+          secondary={{ label: "Redeemed", value: fmtPct(A2.rateRedeemed), sub: `${A2.redeemed} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · registered on AISA` }}
           tiles={[
             { label: "Sent", value: A2.sent?.toLocaleString("en-GB") ?? "—" },
-            { label: "Redeemed", value: A2.redeemed, color: famA.color },
             { label: "Opened", value: A2.opens ? A2.opens.toLocaleString("en-GB") : "—" },
             { label: "Clicked", value: A2.clicks || "—" },
-            { label: "Replied", value: A2.replies || "—" },
+            { label: "Replied", value: A2.replies || "—", color: famA.color },
+            { label: "Redeemed", value: A2.redeemed, color: famA.color },
           ]}
-          legend="A single exact-email match: a person registered with the very address we emailed. Engagement (opens · clicks · replies) is drawn from the a2_engagement tab; clicks are the de-botted Analytics figure."
+          legend="Replied is a genuine email reply (from the a2_engagement tab); clicks are the de-botted Analytics figure. Redeemed is an exact-email match: a person registered with the very address we emailed."
           detail={{ label: "See details in Zoho Campaigns", href: LINKS.campaignsReport }}
         />
 
@@ -234,7 +243,7 @@ export default function Redemption() {
         <div className="avoid-break" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "16px 20px", marginTop: 6 }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 8 }}>How these figures are built</div>
           <div style={{ fontFamily: T.sans, fontSize: 13.8, color: T.inkSoft, lineHeight: 1.65 }}>
-            Every new registrant is classified once, deterministically, by the K5 flow — excluded (internal/test), A2 (emailed), B (direct-messaged) or other — and the matched ones are written to <strong>redemption_detail</strong> with their match type. The denominator for each channel is the latest <strong>sent</strong> figure logged in <strong>attribution</strong>. Rates therefore move only as genuine registrations accrue against a fixed, auditable contact base.
+            <strong>Redeemed</strong> is classified once, deterministically, by the K5 flow — every new registrant is marked excluded (internal/test), A2 (emailed), B (direct-messaged) or other, and the matched ones are written to <strong>redemption_detail</strong> with their match type. <strong>Replied</strong> is engagement, read live from each channel’s own source: the a2_engagement tab for email, and the Master list state «risposto» for LinkedIn. Denominators are the latest <strong>sent</strong> figure in <strong>attribution</strong>, so both rates move against a fixed, auditable contact base. The two channels are not symmetrical in richness — for email we also see opens and clicks; for LinkedIn we additionally see who accepted the connection — but Replied and Redeemed mean the same thing on both.
           </div>
         </div>
 
