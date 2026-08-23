@@ -56,6 +56,18 @@ const fmtPct = p => {
 };
 const lc = s => String(s ?? "").trim().toLowerCase();
 
+// Plan split on a redemption_detail row, from its raw WordPress `role`.
+//   paid = role "customer" — the person started the paying journey. Amount is
+//          deliberately not considered: a €0 / payment-pending customer still
+//          counts as paid, because the role already marks intent.
+//   free = any other populated role (typically "subscriber").
+// A row with an EMPTY role is counted in neither, so free + paid can be less
+// than the redeemed total until every matched row carries a role. That is the
+// honest reading — it makes an unclassified redemption visible rather than
+// silently inflating "free".
+const isPaid = r => /customer/i.test(String(r?.role ?? ""));
+const isFree = r => { const x = lc(r?.role); return x !== "" && !x.includes("customer"); };
+
 // latest value of `sent` for a given channel in the attribution tab
 function latestSent(attr, channel) {
   const rows = attr.filter(r => lc(r.channel) === lc(channel));
@@ -149,18 +161,23 @@ export default function Redemption() {
     const rows = detail.filter(r => lc(r.channel) === "b");
     const persona = rows.filter(r => lc(r.match_type) === "persona").length;
     const azienda = rows.filter(r => lc(r.match_type) === "azienda").length;
+    const paid = rows.filter(isPaid).length;
+    const free = rows.filter(isFree).length;
     // Replied / funnel states come from the Master list column "stato".
     const replied = master.filter(r => lc(r.stato) === "risposto").length;
     const connected = master.filter(r => lc(r.stato) === "connesso_no_dm").length;
     const dmSent = master.filter(r => lc(r.stato) === "dm_inviato").length;
-    return { sent, persona, azienda, total: persona + azienda, replied, connected, dmSent,
+    return { sent, persona, azienda, total: persona + azienda, paid, free, replied, connected, dmSent,
       ratePrimary: pct(persona, sent), rateSecondary: pct(azienda, sent),
       rateReplied: pct(replied, sent), rateRedeemed: pct(persona + azienda, sent) };
   }, [attr, detail, master]);
 
   const A2 = useMemo(() => {
     const sent = latestSent(attr, "A2");
-    const redeemed = detail.filter(r => lc(r.channel) === "a2").length;
+    const rows = detail.filter(r => lc(r.channel) === "a2");
+    const redeemed = rows.length;
+    const paid = rows.filter(isPaid).length;
+    const free = rows.filter(isFree).length;
     // engagement: prefer the dedicated a2_engagement tab; fall back to the A2 attribution row
     const eRow = eng.length ? eng[eng.length - 1] : null;
     const aRow = latestRow(attr, "A2");
@@ -168,7 +185,7 @@ export default function Redemption() {
     const clicks = eRow ? num(eRow.clicks) : aRow ? num(aRow.clicks) : 0;
     const replies = eRow ? num(eRow.replies) : aRow ? num(aRow.replies) : 0;
     const delivered = eRow ? num(eRow.delivered) : 0;
-    return { sent, redeemed, opens, clicks, replies, delivered,
+    return { sent, redeemed, paid, free, opens, clicks, replies, delivered,
       rateReplied: pct(replies, sent), rateRedeemed: pct(redeemed, sent) };
   }, [attr, detail, eng]);
 
@@ -210,8 +227,10 @@ export default function Redemption() {
             { label: "Replied", value: B.replied, color: famB.color },
             { label: "Redeemed — person", value: B.persona, color: famB.color, sub: `${fmtPct(B.ratePrimary)} · primary` },
             { label: "Redeemed — company", value: B.azienda, color: famB.color, sub: `${fmtPct(B.rateSecondary)} · secondary` },
+            { label: "of which free", value: B.free, sub: "subscriber" },
+            { label: "of which paid", value: B.paid, sub: "customer" },
           ]}
-          legend="Replied counts Master state «risposto». Redeemed splits into primary (surname + first name) and secondary (surname + company), reported separately and never summed. «Connected» (accepted the invite but not yet messaged) is shown for funnel context."
+          legend="Replied counts Master state «risposto». Redeemed splits into primary (surname + first name) and secondary (surname + company), reported separately and never summed. «Free / paid» splits the same redeemed by WordPress role: paid = customer (started the paying journey, amount aside), free = subscriber. «Connected» (accepted the invite but not yet messaged) is shown for funnel context."
         />
 
         {/* Channel A2 */}
@@ -226,8 +245,10 @@ export default function Redemption() {
             { label: "Clicked", value: A2.clicks || "—" },
             { label: "Replied", value: A2.replies || "—", color: famA.color },
             { label: "Redeemed", value: A2.redeemed, color: famA.color },
+            { label: "of which free", value: A2.free, sub: "subscriber" },
+            { label: "of which paid", value: A2.paid, sub: "customer" },
           ]}
-          legend="Replied is a genuine email reply (from the a2_engagement tab); clicks are the de-botted Analytics figure. Redeemed is an exact-email match: a person registered with the very address we emailed."
+          legend="Replied is a genuine email reply (from the a2_engagement tab); clicks are the de-botted Analytics figure. Redeemed is an exact-email match: a person registered with the very address we emailed. «Free / paid» splits it by WordPress role: paid = customer (started the paying journey, amount aside), free = subscriber."
           detail={{ label: "See details in Zoho Campaigns", href: LINKS.campaignsReport }}
         />
 
@@ -243,7 +264,7 @@ export default function Redemption() {
         <div className="avoid-break" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "16px 20px", marginTop: 6 }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 8 }}>How these figures are built</div>
           <div style={{ fontFamily: T.sans, fontSize: 13.8, color: T.inkSoft, lineHeight: 1.65 }}>
-            <strong>Redeemed</strong> is classified once, deterministically, by the K5 flow — every new registrant is marked excluded (internal/test), A2 (emailed), B (direct-messaged) or other, and the matched ones are written to <strong>redemption_detail</strong> with their match type. <strong>Replied</strong> is engagement, read live from each channel’s own source: the a2_engagement tab for email, and the Master list state «risposto» for LinkedIn. Denominators are the latest <strong>sent</strong> figure in <strong>attribution</strong>, so both rates move against a fixed, auditable contact base. The two channels are not symmetrical in richness — for email we also see opens and clicks; for LinkedIn we additionally see who accepted the connection — but Replied and Redeemed mean the same thing on both.
+            <strong>Redeemed</strong> is classified once, deterministically, by the K5 flow — every new registrant is marked excluded (internal/test), A2 (emailed), B (direct-messaged) or other, and the matched ones are written to <strong>redemption_detail</strong> with their match type. <strong>Replied</strong> is engagement, read live from each channel’s own source: the a2_engagement tab for email, and the Master list state «risposto» for LinkedIn. Denominators are the latest <strong>sent</strong> figure in <strong>attribution</strong>, so both rates move against a fixed, auditable contact base. Each redeemed registrant also carries its WordPress <strong>role</strong>, split here into <strong>paid</strong> (role <em>customer</em> — the paying journey was started, amount aside) and <strong>free</strong> (role <em>subscriber</em>); a redemption whose role is not yet set is shown in neither, so the split never silently overstates free. The two channels are not symmetrical in richness — for email we also see opens and clicks; for LinkedIn we additionally see who accepted the connection — but Replied and Redeemed mean the same thing on both.
           </div>
         </div>
 
