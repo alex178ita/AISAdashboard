@@ -382,7 +382,7 @@ export default function App() {
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
           <span style={{ fontFamily: T.mono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>Show</span>
           {["A", "B", "C", "D"].map(fk => (
-            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}><FamilyIcon family={fk} size={14} />{fk} — {FAMILY[fk].name}</button>
+            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}><FamilyIcon family={fk} size={16} />{fk} — {FAMILY[fk].name}</button>
           ))}
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
             {PRESETS.map(p => {
@@ -419,7 +419,7 @@ export default function App() {
           return (
             <section key={fk} style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9, margin: "18px 2px 10px" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 7, background: fam.tint, color: fam.color, flex: "0 0 auto" }}><FamilyIcon family={fk} size={15} /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: fam.tint, color: fam.color, flex: "0 0 auto" }}><FamilyIcon family={fk} size={19} /></span>
                 <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 800, letterSpacing: "0.01em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
               </div>
               {fk === "B" && <BFunnelPanel fam={fam} f={bFunnel} />}
@@ -431,7 +431,7 @@ export default function App() {
 
         <section style={{ marginTop: 26 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9, margin: "0 2px 10px" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 7, background: FAMILY.S.tint, color: FAMILY.S.color, flex: "0 0 auto" }}><GearIcon size={15} /></span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: FAMILY.S.tint, color: FAMILY.S.color, flex: "0 0 auto" }}><GearIcon size={19} /></span>
             <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 800, color: T.ink, margin: 0 }}>Service Make.com flows</h2>
           </div>
           <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>

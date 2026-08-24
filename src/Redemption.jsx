@@ -116,7 +116,7 @@ function ChannelCard({ fam, code, title, subtitle, icon, primary, secondary, til
     <div className="kpi-card" style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `6px solid ${fam.color}`, borderRadius: 14, padding: "20px 22px", marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: fam.tint, color: fam.color, flex: "0 0 auto" }}>{icon}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 11, background: fam.tint, color: fam.color, flex: "0 0 auto" }}>{icon}</span>
           <span style={{ fontFamily: T.mono, fontSize: 15, fontWeight: 700, color: fam.color, letterSpacing: "0.04em" }}>{code}</span>
           <span style={{ fontFamily: T.sans, fontWeight: 800, fontSize: 20, color: T.ink, letterSpacing: "-0.01em" }}>{title}</span>
         </div>
