@@ -22,6 +22,7 @@ import {
   REFRESH_MINUTES, FAMILY, LINKS,
 } from "./config.js";
 import { T, NavBar, PageActions, PrintStyle, LinkIcon } from "./shared.jsx";
+import { MailIcon, LinkedInIcon, ReplyIcon, RegisteredIcon, PersonIcon, CompanyIcon, LicenceIcon, ConnectIcon } from "./icons.jsx";
 
 /* ---------- data helpers (local, no coupling to App.jsx) ---------- */
 function parseCSV(text) {
@@ -82,24 +83,42 @@ function latestRow(rows, channel) {
 }
 
 /* ---------- small presentational pieces ---------- */
-function BigStat({ label, value, sub, color }) {
+function BigStat({ label, value, sub, color, icon }) {
   return (
     <div style={{ minWidth: 120 }}>
-      <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.05em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontFamily: T.sans, fontSize: 34, fontWeight: 700, color: color || T.ink, lineHeight: 1.05, letterSpacing: "-0.01em" }}>{value}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, color: T.inkSoft, marginBottom: 4 }}>
+        {icon && <span style={{ display: "inline-flex", color: color || T.inkSoft }}>{icon}</span>}
+        <span style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.05em", textTransform: "uppercase" }}>{label}</span>
+      </div>
+      <div style={{ fontFamily: T.sans, fontSize: 34, fontWeight: 800, color: color || T.ink, lineHeight: 1.05, letterSpacing: "-0.02em" }}>{value}</div>
       {sub && <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft, marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
 
+// One supporting metric tile (label + value + optional icon/sub).
+function Tile({ t }) {
+  return (
+    <div style={{ minWidth: 82 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, color: T.inkSoft, marginBottom: 3 }}>
+        {t.icon && <span style={{ display: "inline-flex", color: t.color || T.inkSoft }}>{t.icon}</span>}
+        <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase" }}>{t.label}</span>
+      </div>
+      <div style={{ fontFamily: T.sans, fontSize: 21, fontWeight: 700, color: t.color || T.ink }}>{t.value}</div>
+      {t.sub && <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>{t.sub}</div>}
+    </div>
+  );
+}
+
 // A KPI card for one channel, coloured with its family colour.
-function ChannelCard({ fam, code, title, subtitle, primary, secondary, tiles, legend, detail }) {
+function ChannelCard({ fam, code, title, subtitle, icon, primary, secondary, tiles, licences, legend, detail }) {
   return (
     <div className="kpi-card" style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `6px solid ${fam.color}`, borderRadius: 14, padding: "20px 22px", marginBottom: 18 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: fam.tint, color: fam.color, flex: "0 0 auto" }}>{icon}</span>
           <span style={{ fontFamily: T.mono, fontSize: 15, fontWeight: 700, color: fam.color, letterSpacing: "0.04em" }}>{code}</span>
-          <span style={{ fontFamily: T.sans, fontWeight: 700, fontSize: 20, color: T.ink }}>{title}</span>
+          <span style={{ fontFamily: T.sans, fontWeight: 800, fontSize: 20, color: T.ink, letterSpacing: "-0.01em" }}>{title}</span>
         </div>
         <span style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>{subtitle}</span>
       </div>
@@ -113,13 +132,15 @@ function ChannelCard({ fam, code, title, subtitle, primary, secondary, tiles, le
       {/* supporting tiles (counts) */}
       {tiles && tiles.length > 0 && (
         <div style={{ display: "flex", gap: 30, flexWrap: "wrap", paddingTop: 16, borderTop: `1px solid ${T.line}` }}>
-          {tiles.map((t, i) => (
-            <div key={i} style={{ minWidth: 78 }}>
-              <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 3 }}>{t.label}</div>
-              <div style={{ fontFamily: T.sans, fontSize: 21, fontWeight: 650, color: t.color || T.ink }}>{t.value}</div>
-              {t.sub && <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>{t.sub}</div>}
-            </div>
-          ))}
+          {tiles.map((t, i) => <Tile key={i} t={t} />)}
+        </div>
+      )}
+
+      {/* "of which:" licence split — free vs paid, grouped and set apart */}
+      {licences && (
+        <div style={{ display: "flex", alignItems: "center", gap: 26, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px dashed ${T.line}` }}>
+          <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: T.inkSoft }}>of which:</span>
+          {licences.map((t, i) => <Tile key={i} t={{ ...t, icon: <LicenceIcon /> }} />)}
         </div>
       )}
 
@@ -212,43 +233,47 @@ export default function Redemption() {
         {error && (<div className="no-print" style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that attribution, redemption_detail and a2_engagement are published to the web as CSV.</div>)}
 
         <p style={{ fontFamily: T.sans, fontSize: 15, color: T.inkSoft, lineHeight: 1.6, maxWidth: 820, marginBottom: 22 }}>
-          Two headline figures per channel, on the same footing. <strong>Replied</strong> is engagement — someone reacted to the outreach. <strong>Redeemed</strong> is the outcome that matters — they went on to register on aisearchaudit.ai. Both are measured against the number of people <strong>each channel actually contacted</strong>, never the total sign-up list.
+          Two headline figures per channel, on the same footing. <strong>Replied</strong> means someone answered the outreach. <strong>Registered on AISA</strong> means they went on to create an account — the outcome that matters. Both are measured against the number of people <strong>each channel actually contacted</strong>, never the total sign-up list.
         </p>
 
         {/* Channel B */}
         <ChannelCard
-          fam={famB} code="B" title="LinkedIn ABM"
-          subtitle={B.sent != null ? `${B.sent} contacts direct-messaged` : "awaiting attribution data"}
-          primary={{ label: "Replied", value: fmtPct(B.rateReplied), sub: `${B.replied} of ${B.sent ?? "—"} · replied to the DM` }}
-          secondary={{ label: "Redeemed", value: fmtPct(B.rateRedeemed), sub: `${B.total} of ${B.sent ?? "—"} · registered on AISA` }}
+          fam={famB} code="B" title="LinkedIn — Account-Based Marketing" icon={<LinkedInIcon />}
+          subtitle={B.sent != null ? `${B.sent} people contacted by direct message` : "awaiting attribution data"}
+          primary={{ label: "Replied", value: fmtPct(B.rateReplied), sub: `${B.replied} of ${B.sent ?? "—"} · replied to the message`, icon: <ReplyIcon /> }}
+          secondary={{ label: "Registered on AISA", value: fmtPct(B.rateRedeemed), sub: `${B.total} of ${B.sent ?? "—"} · signed up after this channel`, icon: <RegisteredIcon /> }}
           tiles={[
-            { label: "Contacted (sent)", value: B.sent ?? "—" },
-            { label: "Connected", value: B.connected, sub: "accepted, no DM yet" },
-            { label: "Replied", value: B.replied, color: famB.color },
-            { label: "Redeemed — person", value: B.persona, color: famB.color, sub: `${fmtPct(B.ratePrimary)} · primary` },
-            { label: "Redeemed — company", value: B.azienda, color: famB.color, sub: `${fmtPct(B.rateSecondary)} · secondary` },
-            { label: "of which free", value: B.free, sub: "subscriber" },
-            { label: "of which paid", value: B.paid, sub: "customer" },
+            { label: "People contacted", value: B.sent ?? "—" },
+            { label: "Connected on LinkedIn", value: B.connected, sub: "accepted, not yet messaged", icon: <ConnectIcon /> },
+            { label: "Replied", value: B.replied, color: famB.color, icon: <ReplyIcon /> },
+            { label: "Registered · by name", value: B.persona, color: famB.color, sub: `${fmtPct(B.ratePrimary)} · strong match`, icon: <PersonIcon /> },
+            { label: "Registered · by company", value: B.azienda, color: famB.color, sub: `${fmtPct(B.rateSecondary)} · weaker match`, icon: <CompanyIcon /> },
           ]}
-          legend="Replied counts Master state «risposto». Redeemed splits into primary (surname + first name) and secondary (surname + company), reported separately and never summed. «Free / paid» splits the same redeemed by WordPress role: paid = customer (started the paying journey, amount aside), free = subscriber. «Connected» (accepted the invite but not yet messaged) is shown for funnel context."
+          licences={[
+            { label: "free licences", value: B.free, sub: "subscriber" },
+            { label: "paid licences", value: B.paid, sub: "customer" },
+          ]}
+          legend="Replied = people who answered the LinkedIn message. Registered = they later signed up on aisearchaudit.ai, shown split by how we matched them: by name (strong) or by company (weaker), reported separately and never added together. Of which = how many of those sign-ups are on a free plan (subscriber) or a paid plan (customer — the paying journey was started, amount aside). Connected = accepted the invite but not yet messaged."
         />
 
         {/* Channel A2 */}
         <ChannelCard
-          fam={famA} code="A2" title="Cold outreach email"
+          fam={famA} code="A2" title="Cold outreach email" icon={<MailIcon />}
           subtitle={A2.sent != null ? `${A2.sent.toLocaleString("en-GB")} emails sent` : "awaiting attribution data"}
-          primary={{ label: "Replied", value: fmtPct(A2.rateReplied), sub: `${A2.replies} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · replied to the email` }}
-          secondary={{ label: "Redeemed", value: fmtPct(A2.rateRedeemed), sub: `${A2.redeemed} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · registered on AISA` }}
+          primary={{ label: "Replied", value: fmtPct(A2.rateReplied), sub: `${A2.replies} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · replied to the email`, icon: <ReplyIcon /> }}
+          secondary={{ label: "Registered on AISA", value: fmtPct(A2.rateRedeemed), sub: `${A2.redeemed} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · signed up after this channel`, icon: <RegisteredIcon /> }}
           tiles={[
-            { label: "Sent", value: A2.sent?.toLocaleString("en-GB") ?? "—" },
+            { label: "Emails sent", value: A2.sent?.toLocaleString("en-GB") ?? "—" },
             { label: "Opened", value: A2.opens ? A2.opens.toLocaleString("en-GB") : "—" },
             { label: "Clicked", value: A2.clicks || "—" },
-            { label: "Replied", value: A2.replies || "—", color: famA.color },
-            { label: "Redeemed", value: A2.redeemed, color: famA.color },
-            { label: "of which free", value: A2.free, sub: "subscriber" },
-            { label: "of which paid", value: A2.paid, sub: "customer" },
+            { label: "Replied", value: A2.replies || "—", color: famA.color, icon: <ReplyIcon /> },
+            { label: "Registered on AISA", value: A2.redeemed, color: famA.color, icon: <RegisteredIcon /> },
           ]}
-          legend="Replied is a genuine email reply (from the a2_engagement tab); clicks are the de-botted Analytics figure. Redeemed is an exact-email match: a person registered with the very address we emailed. «Free / paid» splits it by WordPress role: paid = customer (started the paying journey, amount aside), free = subscriber."
+          licences={[
+            { label: "free licences", value: A2.free, sub: "subscriber" },
+            { label: "paid licences", value: A2.paid, sub: "customer" },
+          ]}
+          legend="Replied = a genuine reply to the email. Clicked is the bot-filtered figure. Registered = the person signed up on aisearchaudit.ai with the very address we emailed. Of which = how many of those sign-ups are on a free plan (subscriber) or a paid plan (customer — the paying journey was started, amount aside)."
           detail={{ label: "See details in Zoho Campaigns", href: LINKS.campaignsReport }}
         />
 

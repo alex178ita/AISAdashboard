@@ -8,6 +8,7 @@ import Charts from "./Charts.jsx";
 import Redemption from "./Redemption.jsx";
 import Docs from "./Docs.jsx";
 import { NavBar, PageActions } from "./shared.jsx";
+import { FamilyIcon, GearIcon } from "./icons.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -344,7 +345,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap'); * { box-sizing: border-box; } a { color: inherit; }`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap'); * { box-sizing: border-box; } a { color: inherit; }`}</style>
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: "30px 26px 64px" }}>
 
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
@@ -372,7 +373,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
             <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" runs={statsFor(runsF, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runsF, "6446272")} />
-            <RecapItem name="B · LinkedIn ABM" status="active" note="pilot · daily chain 02:00–10:00" runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
+            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="pilot · daily chain 02:00–10:00" runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runsF, "6359563")} />
             <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h" runs={statsFor(runsF, ["6871616", "6864777", "6871324"])} />
           </div>
@@ -381,7 +382,7 @@ export default function App() {
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
           <span style={{ fontFamily: T.mono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.06em", color: T.inkSoft }}>Show</span>
           {["A", "B", "C", "D"].map(fk => (
-            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}>{fk} — {FAMILY[fk].name}</button>
+            <button key={fk} onClick={() => setVisibleFams(v => ({ ...v, [fk]: !v[fk] }))} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: T.sans, fontSize: 13.8, fontWeight: 600, padding: "5px 12px", borderRadius: 99, cursor: "pointer", border: `1.5px solid ${FAMILY[fk].color}`, background: visibleFams[fk] ? FAMILY[fk].color : "transparent", color: visibleFams[fk] ? "#fff" : FAMILY[fk].color }}><FamilyIcon family={fk} size={14} />{fk} — {FAMILY[fk].name}</button>
           ))}
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft }}>
             {PRESETS.map(p => {
@@ -417,9 +418,9 @@ export default function App() {
           if (!flowsIn.length) return null;
           return (
             <section key={fk} style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "18px 2px 10px" }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: fam.color }} />
-                <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 700, letterSpacing: "0.02em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, margin: "18px 2px 10px" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 7, background: fam.tint, color: fam.color, flex: "0 0 auto" }}><FamilyIcon family={fk} size={15} /></span>
+                <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 800, letterSpacing: "0.01em", color: T.ink, margin: 0 }}>{fk} — {fam.name}</h2>
               </div>
               {fk === "B" && <BFunnelPanel fam={fam} f={bFunnel} />}
               {fk === "C" && <BlogPanel />}
@@ -429,9 +430,9 @@ export default function App() {
         })}
 
         <section style={{ marginTop: 26 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 10px" }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: FAMILY.S.color }} />
-            <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 700, color: T.ink, margin: 0 }}>Service Make.com flows</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, margin: "0 2px 10px" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 7, background: FAMILY.S.tint, color: FAMILY.S.color, flex: "0 0 auto" }}><GearIcon size={15} /></span>
+            <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 800, color: T.ink, margin: 0 }}>Service Make.com flows</h2>
           </div>
           <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(265px, 1fr))", gap: 14 }}>

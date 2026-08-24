@@ -103,7 +103,7 @@ export const SERVICE_FLOWS = [
   { code: "K4B", name: "Sent-B counter → attribution",    scenarioId: "6920156", status: "active", makeUrl: `${MAKE_BASE}/6920156/edit` },
   { code: "K4A2", name: "Sent-A2 + engagement → attribution", scenarioId: "6936993", status: "active", makeUrl: `${MAKE_BASE}/6936993/edit` },
   { code: "K5", name: "Redemption attribution engine",    scenarioId: "6951866", status: "active", makeUrl: `${MAKE_BASE}/6951866/edit` },
-  { code: "R1", name: "WordPress sign-ups → Registrations", scenarioId: "6955561", status: "active", makeUrl: `${MAKE_BASE}/6955561/edit` },
+  { code: "R1", name: "WordPress sign-ups → Registrations", scenarioId: "6919928", status: "active", makeUrl: `${MAKE_BASE}/6919928/edit` },
   { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
   { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", status: "standby", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
@@ -111,7 +111,7 @@ export const SERVICE_FLOWS = [
 // Family colours (border + accent). Green & pink from the AISA logo.
 export const FAMILY = {
   A: { name: "AISA — Audit & Outreach", color: "#2FB980", soft: "#E7F7F855", tint: "#2FB98022" },
-  B: { name: "AISA — LinkedIn ABM",     color: "#E6568F", soft: "#FDEAF255", tint: "#E6568F22" },
+  B: { name: "AISA — LinkedIn (Account-Based Marketing)", color: "#E6568F", soft: "#FDEAF255", tint: "#E6568F22" },
   C: { name: "Content Generation",      color: "#5B63D3", soft: "#EEF0FB55", tint: "#5B63D322" },
   D: { name: "Reserved",                color: "#E08A3C", soft: "#FCF1E555", tint: "#E08A3C22" },
   S: { name: "Service Flows",           color: "#8A94A6", soft: "#F2F4F755", tint: "#8A94A622" },

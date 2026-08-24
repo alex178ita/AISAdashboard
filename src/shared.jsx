@@ -103,7 +103,7 @@ export function NavBar() {
 export function PrintStyle() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
       * { box-sizing: border-box; }
       a { color: inherit; }
       @media print {
