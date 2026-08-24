@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RUNS_CSV_URL, FIRECRAWL_CSV_URL, CAMPAIGNS_CSV_URL, FLOWS, SERVICE_FLOWS, FAMILY } from "./config.js";
 import { NavBar, PageActions, PrintStyle } from "./shared.jsx";
+import { BarsIcon, FlameIcon, MailIcon, ActivityIcon, GearIcon } from "./icons.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -92,10 +93,13 @@ function Axes({ maxY, days, yFmt = v => Math.round(v) }) {
   );
 }
 
-function Card({ title, subtitle, children, note }) {
+function Card({ title, subtitle, children, note, icon }) {
   return (
     <section style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "16px 20px 10px", marginBottom: 18 }}>
-      <h2 style={{ fontFamily: T.sans, fontSize: 15, fontWeight: 700, margin: "0 0 2px" }}>{title}</h2>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 2px" }}>
+        {icon && <span style={{ display: "inline-flex", color: T.inkSoft, flex: "0 0 auto" }}>{icon}</span>}
+        <h2 style={{ fontFamily: T.sans, fontSize: 15, fontWeight: 800, margin: 0 }}>{title}</h2>
+      </div>
       {subtitle && <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginBottom: 8 }}>{subtitle}</div>}
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>{children}</svg>
       {note && <div style={{ fontFamily: T.sans, fontSize: 11.5, color: T.inkSoft, margin: "6px 2px 4px" }}>{note}</div>}
@@ -230,7 +234,7 @@ export default function Charts() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <img src="https://www.aisearchaudit.ai/wp-content/uploads/2026/07/ai-search-audit-logo-no-tagline.png" alt="AI Search Audit" style={{ height: 42, width: "auto", display: "block" }} />
             <div>
-              <h1 style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>AISA Automated Marketing Flows</h1>
+              <h1 style={{ fontSize: 27, fontWeight: 800, letterSpacing: "-0.02em", margin: 0 }}>AISA Automated Marketing Flows</h1>
               <div style={{ fontFamily: T.mono, fontSize: 12.6, color: T.inkSoft, marginTop: 3 }}>
                 Statistical graphs over time · same sources, de-duplicated by execution_id
               </div>
@@ -260,6 +264,7 @@ export default function Charts() {
 
         {/* 1 — Make operations */}
         <Card
+          icon={<BarsIcon />}
           title="Make operations per day, by family"
           subtitle={`${opsTotal.toLocaleString("en-GB")} operations in range · ${opsAvgDay.toLocaleString("en-GB")}/day average · projected ${projMonth.toLocaleString("en-GB")}/month against a ${OPS_PLAN_PER_MONTH.toLocaleString("en-GB")} plan`}
           note="The dashed line is the daily budget implied by the plan. Operations are the real currency of Make: a flow can look healthy and still be expensive. The Service band covers the K collectors, which have only been monitoring themselves since 8 August 2026 — earlier days understate the true total, and the sharp fall in collector consumption produced by the three-hour write window in K1 v1.2 predates the measurement and is therefore not visible here."
@@ -293,6 +298,7 @@ export default function Charts() {
 
         {/* 2 — Firecrawl */}
         <Card
+          icon={<FlameIcon />}
           title="Firecrawl credits remaining"
           subtitle={burn ? `${Math.round(burn.left).toLocaleString("en-GB")} left${burn.toppedUp ? " · topped up in range, burn measured since" : ""} · ${burn.perDay > 0 ? `burning ${Math.round(burn.perDay).toLocaleString("en-GB")}/day` : "no net consumption yet"}${burn.daysLeft ? ` · ${Math.round(burn.daysLeft)} days of autonomy` : ""}` : "not enough readings in range"}
           note="Firecrawl is the scarcest resource in the system and only A1 and A2 consume it. The slope matters more than the number: a steepening curve means the cold-outreach batch size has grown, and the projection tells you how long before a top-up is needed. An upward jump is a top-up: the burn rate is measured from that point on, not across it."
@@ -310,6 +316,7 @@ export default function Charts() {
 
         {/* 3 — Campaigns health */}
         <Card
+          icon={<MailIcon />}
           title="Cold-outreach list health — unsubscribe rate"
           subtitle={campSeries.length ? `${campSeries[campSeries.length - 1].act.toLocaleString("en-GB")} active · ${campSeries[campSeries.length - 1].uns} unsubscribed · ${campSeries[campSeries.length - 1].bou} bounced · current rate ${campSeries[campSeries.length - 1].rate.toFixed(2)}%` : "no readings in range"}
           note="The absolute count says little; the trend is the early-warning signal for a consent or content problem. The shaded band marks the 0.1–0.3% region where the A2 verification sheet asks for a stop threshold to be defined — crossing it is a reason to pause sending, not to keep watching."
@@ -329,6 +336,7 @@ export default function Charts() {
 
         {/* 4 — runs and errors */}
         <Card
+          icon={<ActivityIcon />}
           title="Runs and errors per day"
           subtitle={`${runsClean.length.toLocaleString("en-GB")} executions in range · ${runsClean.filter(r => (r.status || "").toLowerCase() !== "success").length} errors`}
           note="Read this one for shape, not for height. An isolated red block is an incident; red appearing on consecutive days is a degradation, and that is the difference between «it happened» and «it is getting worse»."
@@ -353,8 +361,8 @@ export default function Charts() {
 
         <section style={{ marginTop: 26 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 10px" }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: FAMILY.S.color }} />
-            <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 700, color: T.ink, margin: 0 }}>Service &amp; collector flows</h2>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: FAMILY.S.tint, color: FAMILY.S.color, flex: "0 0 auto" }}><GearIcon size={19} /></span>
+            <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 800, color: T.ink, margin: 0 }}>Service &amp; collector flows</h2>
           </div>
           <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${FAMILY.S.color}`, borderRadius: 12, padding: "14px 18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(255px, 1fr))", gap: 14 }}>
