@@ -8,7 +8,7 @@ import Charts from "./Charts.jsx";
 import Redemption from "./Redemption.jsx";
 import Docs from "./Docs.jsx";
 import { NavBar, PageActions } from "./shared.jsx";
-import { FamilyIcon, GearIcon } from "./icons.jsx";
+import { FamilyIcon, GearIcon, ActivityIcon } from "./icons.jsx";
 
 const T = {
   sans: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -165,22 +165,23 @@ const PRESETS = [
 // spelled out next to the dot — an 8px amber dot next to an 8px green one is
 // not a readable difference on a black background, so a flow in standby has to
 // SAY standby. Non-active rows are dimmed as a second cue.
-function RecapItem({ name, status, note, runs }) {
+function RecapItem({ name, status, note, runs, color }) {
   const key = STATUS[status] ? status : "standby";
   const s = STATUS[key];
   const off = key !== "active";
+  const c = color || "#8A94A6";
+  // Boxed info, tinted with the family colour and legible on the dark band.
+  const box = { background: `${c}26`, border: `1px solid ${c}47`, borderRadius: 8, padding: "6px 10px", fontFamily: T.mono, fontSize: 11.5, color: "#E7EAEF", lineHeight: 1.3, minWidth: 0 };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", flexWrap: "wrap", padding: "3px 0", opacity: off ? 0.62 : 1 }}>
-      <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 210, flex: "0 0 auto" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(230px, 1.25fr) 92px minmax(180px, 1.9fr) 104px 168px", gap: 10, alignItems: "center", width: "100%", opacity: off ? 0.62 : 1 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
         <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, flex: "0 0 auto" }} />
-        <span style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 600, color: "#fff" }}>{name}</span>
+        <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: "#fff", lineHeight: 1.25 }}>{name}</span>
       </span>
-      <span style={{ fontFamily: T.mono, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: s.dot, minWidth: 104, flex: "0 0 auto" }}>
-        {s.label}
-      </span>
-      <span style={{ fontFamily: T.mono, fontSize: 11.5, color: "#8A94A6" }}>
-        {note ? note + " · " : ""}{runs ? `${runs.total} runs · last ${fmtWhen(runs.last?.started_at)}` : "no runs yet"}
-      </span>
+      <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: s.dot }}>{s.label}</span>
+      <span style={box}>{note || "—"}</span>
+      <span style={{ ...box, textAlign: "center" }}>{runs ? `${runs.total} runs` : "no runs"}</span>
+      <span style={box}>{runs?.last ? `last ${fmtWhen(runs.last?.started_at)}` : "—"}</span>
     </div>
   );
 }
@@ -367,16 +368,18 @@ export default function App() {
 
         {error && (<div style={{ background: T.errSoft, border: `1px solid ${T.err}`, color: T.err, borderRadius: 8, padding: "10px 14px", fontFamily: T.mono, fontSize: 13.8, marginBottom: 16 }}>Error loading data: {error}. Check that the sheet tabs are published to the web.</div>)}
 
+        <div style={{ display: "flex", alignItems: "center", gap: 9, margin: "0 2px 10px" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: "#E6E9ED", color: T.ink, flex: "0 0 auto" }}><ActivityIcon size={19} /></span>
+          <h2 style={{ fontFamily: T.sans, fontSize: 14.9, fontWeight: 800, color: T.ink, margin: 0 }}>Make.com flows — status</h2>
+          {rangeOn && <span style={{ fontFamily: T.mono, fontSize: 12, color: T.inkSoft }}>· {fromDate || "start"} → {toDate || "today"}</span>}
+        </div>
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
-          <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7C8894", textAlign: "left", marginBottom: 12 }}>
-            Make.com flows — status{rangeOn ? ` · ${fromDate || "start"} → ${toDate || "today"}` : ""}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-            <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" runs={statsFor(runsF, "6350489")} />
-            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" runs={statsFor(runsF, "6446272")} />
-            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="pilot · daily chain 02:00–10:00" runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
-            <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" runs={statsFor(runsF, "6359563")} />
-            <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h" runs={statsFor(runsF, ["6871616", "6864777", "6871324"])} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+            <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" color={FAMILY.A.color} runs={statsFor(runsF, "6350489")} />
+            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" color={FAMILY.A.color} runs={statsFor(runsF, "6446272")} />
+            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="daily chain 02:00–10:00" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
+            <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" color={FAMILY.C.color} runs={statsFor(runsF, "6359563")} />
+            <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h" color={FAMILY.C.color} runs={statsFor(runsF, ["6871616", "6864777", "6871324"])} />
           </div>
         </div>
 
