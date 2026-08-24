@@ -57,6 +57,11 @@ const fmtPct = p => {
 };
 const lc = s => String(s ?? "").trim().toLowerCase();
 
+// Shared column count for the two channel cards, so their tiles line up.
+// = the larger tile count across the cards (both have 5 today); a card with
+// fewer voices simply leaves the trailing columns empty.
+const REDEMPTION_COLS = 5;
+
 // Plan split on a redemption_detail row, from its raw WordPress `role`.
 //   paid = role "customer" — the person started the paying journey. Amount is
 //          deliberately not considered: a €0 / payment-pending customer still
@@ -96,22 +101,25 @@ function BigStat({ label, value, sub, color, icon }) {
   );
 }
 
-// One supporting metric tile (label + value + optional icon/sub).
-function Tile({ t }) {
+// One supporting metric tile, boxed and lightly tinted with the card's colour.
+function Tile({ t, accent }) {
+  const a = accent || T.ink;
   return (
-    <div style={{ minWidth: 82 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, color: T.inkSoft, marginBottom: 3 }}>
-        {t.icon && <span style={{ display: "inline-flex", color: t.color || T.inkSoft }}>{t.icon}</span>}
-        <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase" }}>{t.label}</span>
+    <div style={{ background: `${a}0d`, border: `1px solid ${a}26`, borderRadius: 10, padding: "10px 12px", minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, color: T.inkSoft, marginBottom: 4 }}>
+        {t.icon && <span style={{ display: "inline-flex", color: t.color || a, flex: "0 0 auto" }}>{t.icon}</span>}
+        <span style={{ fontFamily: T.mono, fontSize: 10.5, letterSpacing: "0.03em", textTransform: "uppercase", lineHeight: 1.25 }}>{t.label}</span>
       </div>
       <div style={{ fontFamily: T.sans, fontSize: 21, fontWeight: 700, color: t.color || T.ink }}>{t.value}</div>
-      {t.sub && <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginTop: 2 }}>{t.sub}</div>}
+      {t.sub && <div style={{ fontFamily: T.mono, fontSize: 10.5, color: T.inkSoft, marginTop: 2, lineHeight: 1.25 }}>{t.sub}</div>}
     </div>
   );
 }
 
 // A KPI card for one channel, coloured with its family colour.
-function ChannelCard({ fam, code, title, subtitle, icon, primary, secondary, tiles, licences, legend, detail }) {
+function ChannelCard({ fam, code, title, subtitle, icon, primary, secondary, tiles, licences, cols, legend, detail }) {
+  // Shared column count so tiles line up vertically across the stacked cards.
+  const gridCols = cols || (tiles ? tiles.length : 1);
   return (
     <div className="kpi-card" style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `6px solid ${fam.color}`, borderRadius: 14, padding: "20px 22px", marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
@@ -129,18 +137,20 @@ function ChannelCard({ fam, code, title, subtitle, icon, primary, secondary, til
         {secondary && <BigStat {...secondary} color={fam.color} />}
       </div>
 
-      {/* supporting tiles (counts) */}
+      {/* supporting tiles (counts), boxed and aligned on a shared grid */}
       {tiles && tiles.length > 0 && (
-        <div style={{ display: "flex", gap: 30, flexWrap: "wrap", paddingTop: 16, borderTop: `1px solid ${T.line}` }}>
-          {tiles.map((t, i) => <Tile key={i} t={t} />)}
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`, gap: 12, paddingTop: 16, borderTop: `1px solid ${T.line}` }}>
+          {tiles.map((t, i) => <Tile key={i} t={t} accent={fam.color} />)}
         </div>
       )}
 
-      {/* "of which:" licence split — free vs paid, grouped and set apart */}
+      {/* "of which:" licence split — same grid, so free/paid sit under the first columns */}
       {licences && (
-        <div style={{ display: "flex", alignItems: "center", gap: 26, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px dashed ${T.line}` }}>
-          <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: T.inkSoft }}>of which:</span>
-          {licences.map((t, i) => <Tile key={i} t={{ ...t, icon: <LicenceIcon /> }} />)}
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px dashed ${T.line}` }}>
+          <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 8 }}>of which:</div>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`, gap: 12 }}>
+            {licences.map((t, i) => <Tile key={i} t={{ ...t, icon: <LicenceIcon /> }} accent={fam.color} />)}
+          </div>
         </div>
       )}
 
@@ -238,7 +248,7 @@ export default function Redemption() {
 
         {/* Channel B */}
         <ChannelCard
-          fam={famB} code="B" title="LinkedIn — Account-Based Marketing" icon={<LinkedInIcon />}
+          fam={famB} code="B" title="LinkedIn — Account-Based Marketing" icon={<LinkedInIcon />} cols={REDEMPTION_COLS}
           subtitle={B.sent != null ? `${B.sent} people contacted by direct message` : "awaiting attribution data"}
           primary={{ label: "Replied", value: fmtPct(B.rateReplied), sub: `${B.replied} of ${B.sent ?? "—"} · replied to the message`, icon: <ReplyIcon /> }}
           secondary={{ label: "Registered on AISA", value: fmtPct(B.rateRedeemed), sub: `${B.total} of ${B.sent ?? "—"} · signed up after this channel`, icon: <RegisteredIcon /> }}
@@ -258,7 +268,7 @@ export default function Redemption() {
 
         {/* Channel A2 */}
         <ChannelCard
-          fam={famA} code="A2" title="Cold outreach email" icon={<MailIcon />}
+          fam={famA} code="A2" title="Cold outreach email" icon={<MailIcon />} cols={REDEMPTION_COLS}
           subtitle={A2.sent != null ? `${A2.sent.toLocaleString("en-GB")} emails sent` : "awaiting attribution data"}
           primary={{ label: "Replied", value: fmtPct(A2.rateReplied), sub: `${A2.replies} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · replied to the email`, icon: <ReplyIcon /> }}
           secondary={{ label: "Registered on AISA", value: fmtPct(A2.rateRedeemed), sub: `${A2.redeemed} of ${A2.sent?.toLocaleString("en-GB") ?? "—"} · signed up after this channel`, icon: <RegisteredIcon /> }}
