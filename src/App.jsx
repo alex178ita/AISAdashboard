@@ -78,12 +78,13 @@ function rowDay(row) {
   return "";
 }
 
-function Metric({ label, value, sub, color }) {
+function Metric({ label, value, sub, color, accent }) {
+  const a = accent || T.ink;
   return (
-    <div style={{ minWidth: 78 }}>
-      <div style={{ fontFamily: T.mono, fontSize: 11.5, letterSpacing: "0.04em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 3 }}>{label}</div>
-      <div style={{ fontFamily: T.sans, fontSize: 23, fontWeight: 650, color: color || T.ink, lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft, marginTop: 2 }}>{sub}</div>}
+    <div style={{ background: `${a}0d`, border: `1px solid ${a}26`, borderRadius: 10, padding: "9px 11px", minWidth: 0 }}>
+      <div style={{ fontFamily: T.mono, fontSize: 10.5, letterSpacing: "0.03em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 3, lineHeight: 1.25 }}>{label}</div>
+      <div style={{ fontFamily: T.sans, fontSize: 22, fontWeight: 650, color: color || T.ink, lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontFamily: T.mono, fontSize: 10.5, color: T.inkSoft, marginTop: 2, lineHeight: 1.25 }}>{sub}</div>}
     </div>
   );
 }
@@ -135,8 +136,8 @@ function FlowStrip({ flow, fam, data }) {
       </div>
       {!isPlaceholder ? (
         <>
-          <div style={{ display: "flex", gap: 26, flexWrap: "wrap", paddingBottom: 14 }}>
-            {data?.metrics?.map((m, i) => (<Metric key={i} label={m.label} value={m.value} sub={m.sub} color={m.color} />))}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 10, paddingBottom: 14 }}>
+            {data?.metrics?.map((m, i) => (<Metric key={i} label={m.label} value={m.value} sub={m.sub} color={m.color} accent={fam.color} />))}
           </div>
           <div style={{ borderTop: `1px solid ${T.line}`, margin: "0 -18px", padding: "10px 18px", display: "flex", gap: 10, flexWrap: "wrap", background: fam.soft }}>
             {flow.makeUrl && <DetailLink label={`See make.com ${flow.code} flow`} href={flow.makeUrl} color={fam.color} />}
