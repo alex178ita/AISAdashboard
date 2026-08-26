@@ -28,8 +28,15 @@ export const B_MASTER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-
 
 // Flow B — LinkedIn ABM funnel.
 // Publish the "KPI_Log" tab of the "AISA_Flusso_B_Fogli" workbook as CSV and paste the URL here.
-// Expected columns: data · evento · linkedin_url · dettaglio
-// Events counted: invito_inviato · escluso_crm · connessione_accettata · dm_inviato · risposta
+// Expected columns: data · evento · linkedin_url · dettaglio · sender
+// Events counted as DISTINCT PEOPLE (by linkedin_url):
+//   invito_inviato · escluso_crm · connessione_accettata · dm_inviato · skip_no_hook · risposta
+// Counted as ATTEMPTS (not people):
+//   dm_non_inviato — a send the phantom receipt did not confirm. B2-cleanup v1.6
+//   puts the person back to scraped_pronto, so the same person can legitimately
+//   appear here more than once before a DM finally lands.
+// skip_no_hook is written by B2 v1.4 when Claude declines for want of a specific,
+// verifiable hook; those people are a real loss and stay in the accepted total.
 export const B_FUNNEL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2QNJv9wz9vGSFh_VioH1mo8XFWo_CFwnqpONPMOGZ1OA0kC4sax4PEFL8SZWKzqEZJmR4HM_wiLXL/pub?gid=664403748&single=true&output=csv"; // KPI_Log tab (AISA_Flusso_B_Fogli), published CSV
 
 // Flow C2 — blog editorial KPIs (Airtable "AISA Blog Editorial").
@@ -81,9 +88,9 @@ export const FLOWS = [
   { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
   { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },
   { code: "Bg",  family: "B", name: "B-guard — skip already-messaged",          scenarioId: "6745694", status: "active",  makeUrl: `${MAKE_BASE}/6745694/edit` },
-  { code: "B2",  family: "B", name: "DM writer (Claude) — review-gate",         scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
+  { code: "B2",  family: "B", name: "DM writer (Claude) → DM_Log · skip_no_hook", scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
   { code: "B2s", family: "B", name: "DM send (Message Sender)",                 scenarioId: "6698916", status: "active",  makeUrl: `${MAKE_BASE}/6698916/edit` },
-  { code: "B2c", family: "B", name: "B2-cleanup — clear DM_Log + Master",       scenarioId: "6729475", status: "active",  makeUrl: `${MAKE_BASE}/6729475/edit` },
+  { code: "B2c", family: "B", name: "B2-cleanup — receipt gate + rollback",     scenarioId: "6729475", status: "active",  makeUrl: `${MAKE_BASE}/6729475/edit` },
   { code: "B5",  family: "B", name: "Reply alert → Gmail + Cliq",               scenarioId: "6731586", status: "active",  makeUrl: `${MAKE_BASE}/6731586/edit` },
   // Family C — content generation (indigo)
   { code: "C1",  family: "C", name: "Social writer → Zoho Social",              scenarioId: "6359563", status: "active", makeUrl: `${MAKE_BASE}/6359563/edit` },

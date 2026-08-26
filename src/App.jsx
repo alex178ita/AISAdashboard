@@ -186,23 +186,64 @@ function RecapItem({ name, status, note, runs, color }) {
   );
 }
 
+// What became of the people who accepted: written to, skipped for want of a
+// hook, or still queued. The three add up to "Accepted" by construction, which
+// is the point — an unexplained gap between accepted and DM sent used to be
+// indistinguishable from a backlog.
+const SKIP_COLOUR = "#A9701F";
+const QUEUE_COLOUR = "#8A94A6";
+
+function AcceptedSplit({ f, fam }) {
+  if (!f.accepted) return null;
+  const parts = [
+    { label: "DM sent", value: f.dm, color: fam.color },
+    { label: "no hook", value: f.skipped, color: SKIP_COLOUR },
+    { label: "in queue", value: f.inQueue, color: QUEUE_COLOUR },
+  ].filter(p => p.value > 0);
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", height: 9, borderRadius: 99, overflow: "hidden", background: T.line }}>
+        {parts.map((p, i) => (
+          <div key={i} title={`${p.label}: ${p.value}`}
+               style={{ width: `${(p.value / f.accepted) * 100}%`, background: p.color }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 7 }}>
+        {parts.map((p, i) => (
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.mono, fontSize: 11, color: T.inkSoft }}>
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: p.color }} />
+            {p.label} {p.value}
+          </span>
+        ))}
+        <span style={{ fontFamily: T.mono, fontSize: 11, color: T.inkSoft, marginLeft: "auto" }}>
+          of {f.accepted} accepted
+          {f.failedAttempts ? ` · ${f.failedAttempts} send${f.failedAttempts > 1 ? "s" : ""} not confirmed, re-queued` : ""}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function BFunnelPanel({ fam, f }) {
   const tiles = [
     { label: "Invites sent", value: f.invited || "—" },
     { label: "Excluded (CRM)", value: f.excluded || "—", color: f.excluded ? T.warn : T.ink },
     { label: "Accepted", value: f.accepted || "—", sub: f.accRate != null ? `${f.accRate}% acc.` : null, color: fam.color },
     { label: "DM sent", value: f.dm || "—", sub: f.dmRate != null ? `${f.dmRate}% of acc.` : null, color: fam.color },
+    { label: "No hook", value: f.skipped || "—", sub: f.skipRate != null ? `${f.skipRate}% of acc.` : null, color: f.skipped ? SKIP_COLOUR : T.ink },
+    { label: "In queue", value: f.inQueue || "—", sub: "accepted, not yet written to", color: QUEUE_COLOUR },
     { label: "Replies", value: f.replies || "—", sub: f.replyRate != null ? `${f.replyRate}% reply` : null, color: f.replies ? T.ok : T.ink },
   ];
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderLeft: `5px solid ${fam.color}`, borderRadius: 12, padding: "14px 18px", marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
         <span style={{ fontFamily: T.sans, fontWeight: 700, fontSize: 16.1, color: T.ink }}>LinkedIn outreach funnel</span>
-        <span style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft }}>{f.hasData ? "from KPI_Log" : "awaiting data — publish the KPI_Log tab as CSV and set B_FUNNEL_CSV_URL"}</span>
+        <span style={{ fontFamily: T.mono, fontSize: 11.5, color: T.inkSoft }}>{f.hasData ? "from KPI_Log · distinct people" : "awaiting data — publish the KPI_Log tab as CSV and set B_FUNNEL_CSV_URL"}</span>
       </div>
       <div style={{ display: "flex", gap: 26, flexWrap: "wrap" }}>
         {tiles.map((m, i) => (<Metric key={i} label={m.label} value={m.value} sub={m.sub} color={m.color} />))}
       </div>
+      <AcceptedSplit f={f} fam={fam} />
     </div>
   );
 }
@@ -291,16 +332,41 @@ export default function App() {
     return { remaining: last.v, plan: last.plan, burn, end: last.end };
   }, [firecrawlF]);
 
+  /* KPI_Log is an append-only event log, and before the per-person receipt gate
+     went live on 26/08/2026 it could record the same person more than once — 58
+     dm_inviato rows for 49 distinct people. Counting rows therefore overstated
+     the funnel. Every stage below counts DISTINCT people (by linkedin_url), so
+     a duplicated event no longer inflates anything; rows with no url keep a
+     synthetic key so they are still counted exactly once.
+
+     dm_non_inviato is the exception: it is a failed send, not a funnel stage.
+     A person whose send fails is put back in the queue by B2-cleanup v1.6 and
+     is written to again the next morning, so counting people there would hide
+     repeat failures. It counts ATTEMPTS, and stays out of the decomposition. */
   const bFunnel = useMemo(() => {
-    const c = { invito_inviato: 0, escluso_crm: 0, connessione_accettata: 0, dm_inviato: 0, risposta: 0 };
-    bkpiF.forEach(x => { const ev = (x.evento || "").trim().toLowerCase(); if (ev in c) c[ev] += 1; });
+    const PEOPLE = ["invito_inviato", "escluso_crm", "connessione_accettata", "dm_inviato", "skip_no_hook", "risposta"];
+    const sets = {}; PEOPLE.forEach(k => (sets[k] = new Set()));
+    let anon = 0, failedAttempts = 0;
+    bkpiF.forEach(x => {
+      const ev = (x.evento || "").trim().toLowerCase();
+      if (ev === "dm_non_inviato") { failedAttempts += 1; return; }
+      if (!(ev in sets)) return;
+      const url = (x.linkedin_url || "").trim().toLowerCase();
+      sets[ev].add(url || ` row${anon++}`);
+    });
+    const n = k => sets[k].size;
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
+    const invited = n("invito_inviato"), accepted = n("connessione_accettata");
+    const dm = n("dm_inviato"), skipped = n("skip_no_hook"), replies = n("risposta");
+    // Whoever accepted and has neither been written to nor skipped is still queued.
+    const inQueue = Math.max(0, accepted - dm - skipped);
     return {
-      invited: c.invito_inviato, accepted: c.connessione_accettata, dm: c.dm_inviato,
-      replies: c.risposta, excluded: c.escluso_crm, hasData: bkpiF.length > 0,
-      accRate: pct(c.connessione_accettata, c.invito_inviato),
-      replyRate: pct(c.risposta, c.invito_inviato),
-      dmRate: pct(c.dm_inviato, c.connessione_accettata),
+      invited, accepted, dm, replies, skipped, inQueue, failedAttempts,
+      excluded: n("escluso_crm"), hasData: bkpiF.length > 0,
+      accRate: pct(accepted, invited),
+      replyRate: pct(replies, invited),
+      dmRate: pct(dm, accepted),
+      skipRate: pct(skipped, accepted),
     };
   }, [bkpiF]);
 
