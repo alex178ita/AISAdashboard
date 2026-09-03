@@ -47,6 +47,17 @@ export const B_FUNNEL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-
 // reach the browser. Leave empty to hide the blog panel.
 export const BLOG_KPI_URL = "/api/blog-kpi";
 
+// Flow C2 — blog traffic (Google Analytics 4, property of aisearchaudit.ai).
+// Same shape as the line above and for the same reason: GA4 cannot be read from
+// the browser without exposing a credential, so a serverless route reads it with
+// a SERVICE ACCOUNT held in Vercel environment variables and returns aggregates.
+// The route joins GA4 page paths to the Airtable Articles table, so each row is
+// an article with its pillar and age, not a bare URL.
+// Set GA4_PROPERTY_ID, GA4_SA_EMAIL and GA4_SA_KEY on the deployment; until they
+// exist the route answers { configured: false } and the panel stays hidden.
+// Leave this empty to remove the panel entirely.
+export const BLOG_GA4_URL = "/api/blog-ga4";
+
 // Auto-refresh (minutes)
 export const REFRESH_MINUTES = 5;
 

@@ -4,6 +4,7 @@ import {
   A2_ENGAGEMENT_CSV_URL, B_FUNNEL_CSV_URL, REFRESH_MINUTES, LINKS, FLOWS, SERVICE_FLOWS, FAMILY,
 } from "./config.js";
 import BlogPanel from "./BlogPanel.jsx";
+import BlogTrafficPanel from "./BlogTrafficPanel.jsx";
 import Charts from "./Charts.jsx";
 import Redemption from "./Redemption.jsx";
 import Docs from "./Docs.jsx";
@@ -352,7 +353,7 @@ export default function App() {
       if (ev === "dm_non_inviato") { failedAttempts += 1; return; }
       if (!(ev in sets)) return;
       const url = (x.linkedin_url || "").trim().toLowerCase();
-      sets[ev].add(url || ` row${anon++}`);
+      sets[ev].add(url || `anon:${anon++}`);
     });
     const n = k => sets[k].size;
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
@@ -494,6 +495,7 @@ export default function App() {
               </div>
               {fk === "B" && <BFunnelPanel fam={fam} f={bFunnel} />}
               {fk === "C" && <BlogPanel />}
+              {fk === "C" && <BlogTrafficPanel />}
               {flowsIn.map(flow => (<FlowStrip key={flow.code} flow={flow} fam={fam} data={flow.placeholder ? null : metricsForFlow(flow)} />))}
             </section>
           );
