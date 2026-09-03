@@ -116,7 +116,7 @@ export default function BlogTrafficPanel() {
     );
   }
 
-  const { totals, pillars, articles = [], unmatched = [], windowDays } = data;
+  const { totals, pillars, articles = [], unmatched = [], noUrl = [], windowDays } = data;
   const live = articles.filter((a) => a.inGa4 || a.views > 0);
   const top = articles.slice(0, 12);
   const maxViews = top.reduce((m, a) => Math.max(m, a.views), 0) || 1;
@@ -217,6 +217,21 @@ export default function BlogTrafficPanel() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {noUrl.length > 0 && (
+        <div style={{ marginTop: 8, fontSize: 10.5, color: "#A9701F" }}>
+          <b>{noUrl.length} record without a public URL</b> — not measurable until
+          WP_Public_URL is filled in on Airtable:{" "}
+          {noUrl.slice(0, 3).map((n, i) => (
+            <span key={n.title}>
+              {i > 0 && " · "}
+              {n.title.slice(0, 44)}
+              <span style={{ color: MUTED }}> ({n.status})</span>
+            </span>
+          ))}
+          {noUrl.length > 3 && ` · +${noUrl.length - 3} more`}
+        </div>
       )}
 
       {data.joinError && (

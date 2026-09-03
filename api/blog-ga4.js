@@ -171,15 +171,64 @@ export default async function handler(req, res) {
   const window = Math.min(365, Math.max(7, parseInt(req.query?.days, 10) || 28));
 
   try {
+    // Airtable FIRST, because the article URLs decide what to ask GA4 for.
+    // The earlier version filtered on a hardcoded "/blog/" prefix, which returned
+    // nothing at all on a site whose articles sit at the domain root — and an empty
+    // GA4 answer is indistinguishable from "nobody read anything". Asking for the
+    // exact paths the editorial table holds cannot miss in that way.
+    let records = null;
+    let joinError = null;
+    if (airtable) {
+      try {
+        records = await fetchArticles(airtable);
+      } catch (e) {
+        joinError = String(e.message || e);
+      }
+    }
+
+    const articlePaths = [
+      ...new Set(
+        (records || [])
+          .map((r) => toPath(r.fields.WP_Public_URL))
+          .filter(Boolean)
+          // GA4 stores pagePath as the site serves it, so a WordPress permalink
+          // appears with its trailing slash. toPath() strips it on our side; ask
+          // for both spellings rather than betting on one.
+          .flatMap((p) => [p, `${p}/`])
+      ),
+    ];
+
+    // An explicit prefix wins when the site does keep its articles under one:
+    // set BLOG_PATH_PREFIX (e.g. "/blog/") to measure the whole section,
+    // including pages that have no Airtable record yet.
+    const prefix = process.env.BLOG_PATH_PREFIX || "";
+    const dimensionFilter = prefix
+      ? {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "CONTAINS", value: prefix, caseSensitive: false },
+          },
+        }
+      : articlePaths.length
+        ? {
+            filter: {
+              fieldName: "pagePath",
+              inListFilter: { values: articlePaths.slice(0, 300), caseSensitive: false },
+            },
+          }
+        : undefined; // no records and no prefix: report the whole property rather than nothing
+
     const token = await getAccessToken(saEmail, saKey);
 
     // One report, two date ranges. The long window is the standing figure; the
     // short one is what says whether an article is still being read or was a
     // publication-day spike. GA4 returns the range as an extra dimension.
+    // endDate is "today": today's figures are incomplete, but a visit an hour ago
+    // is exactly what someone checking the panel wants to see.
     const report = await runReport(propertyId, token, {
       dateRanges: [
-        { startDate: `${window}daysAgo`, endDate: "yesterday", name: "window" },
-        { startDate: "7daysAgo", endDate: "yesterday", name: "last7" },
+        { startDate: `${window}daysAgo`, endDate: "today", name: "window" },
+        { startDate: "7daysAgo", endDate: "today", name: "last7" },
       ],
       dimensions: [{ name: "pagePath" }],
       metrics: [
@@ -187,12 +236,7 @@ export default async function handler(req, res) {
         { name: "totalUsers" },
         { name: "userEngagementDuration" },
       ],
-      dimensionFilter: {
-        filter: {
-          fieldName: "pagePath",
-          stringFilter: { matchType: "CONTAINS", value: BLOG_PREFIX, caseSensitive: false },
-        },
-      },
+      ...(dimensionFilter ? { dimensionFilter } : {}),
       limit: 1000,
     });
 
@@ -226,10 +270,21 @@ export default async function handler(req, res) {
     // Join to the editorial record. Without it the numbers are page paths;
     // with it they are articles, with a pillar and an age.
     let articles = [];
-    let joinError = null;
-    if (airtable) {
-      try {
-        const records = await fetchArticles(airtable);
+    let noUrl = [];
+    if (records) {
+      {
+        // Published articles with no WP_Public_URL cannot be measured at all —
+        // there is no path to attribute traffic to. Name them instead of dropping
+        // them silently, since the fix is one empty Airtable cell.
+        // Only the published ones: a draft has no URL because it has no page yet,
+        // which is correct and not worth reporting.
+        noUrl = records
+          .filter(
+            (r) =>
+              !r.fields.WP_Public_URL &&
+              /pubblic|publish|live/i.test(String(r.fields.Status || ""))
+          )
+          .map((r) => ({ title: r.fields.Title || r.id, status: r.fields.Status }));
         articles = records
           .filter((r) => r.fields.WP_Public_URL)
           .map((r) => {
@@ -254,8 +309,6 @@ export default async function handler(req, res) {
             };
           })
           .sort((a, b) => b.views - a.views);
-      } catch (e) {
-        joinError = String(e.message || e);
       }
     }
 
@@ -306,7 +359,16 @@ export default async function handler(req, res) {
       pillars,
       articles,
       unmatched,
+      noUrl, // records with a status but no URL: invisible to GA4 until filled in
       joinError, // non-null means GA4 answered but Airtable did not
+      // How the question was put to GA4. When every figure is zero this is the
+      // first thing to look at: it distinguishes "nobody read it" from
+      // "we asked about paths that do not exist".
+      filter: {
+        mode: prefix ? `prefix:${prefix}` : articlePaths.length ? "articlePaths" : "wholeProperty",
+        pathsAsked: articlePaths.length,
+        pathsWithTraffic: byPath.size,
+      },
       note:
         "Traffic is attributed by page path. GA4 date ranges end yesterday: " +
         "today's views are never included.",
