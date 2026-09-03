@@ -90,8 +90,23 @@ export default function BlogTrafficPanel() {
     );
   }
 
-  // Not wired up yet: stay out of the way entirely rather than showing an empty frame.
-  if (data.configured === false) return null;
+  // Not wired up yet. During setup this must be VISIBLE, not silent: a panel that
+  // hides itself cannot tell you whether the code failed to deploy or a variable is
+  // missing, and those two need opposite fixes. So say which variables are absent.
+  if (data.configured === false) {
+    return (
+      <div style={box}>
+        <div style={{ fontWeight: 700, color: C, marginBottom: 4 }}>Blog traffic</div>
+        <div style={{ fontSize: 11.5, color: MUTED }}>
+          GA4 not configured yet — missing{" "}
+          <b style={{ color: "#A9701F", fontFamily: "monospace" }}>
+            {(data.missing || []).join(", ") || "unknown"}
+          </b>
+          . Set it on the Vercel project (Settings → Environment Variables) and redeploy.
+        </div>
+      </div>
+    );
+  }
 
   const { totals, pillars, articles = [], unmatched = [], windowDays } = data;
   const live = articles.filter((a) => a.inGa4 || a.views > 0);
