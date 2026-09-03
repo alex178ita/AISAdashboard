@@ -54,9 +54,17 @@ export default function BlogTrafficPanel() {
   useEffect(() => {
     if (!BLOG_GA4_URL) return;
     let alive = true;
+    // Read the body even when the status is not ok: the route answers 502 with
+    // { error } carrying Google's own message, and that message is the whole
+    // diagnosis. Rejecting on !r.ok would discard it and leave a bare "HTTP 502",
+    // which says only that something failed, not what.
     const load = () =>
       fetch(BLOG_GA4_URL)
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then((r) =>
+          r
+            .json()
+            .catch(() => ({ error: `HTTP ${r.status} — route returned no JSON` }))
+        )
         .then((j) => alive && (j.error ? setErr(j.error) : (setData(j), setErr(null))))
         .catch((e) => alive && setErr(String(e.message || e)));
     load();
