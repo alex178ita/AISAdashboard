@@ -348,7 +348,11 @@ export default async function handler(req, res) {
       { views: 0, users: 0, views7: 0 }
     );
 
-    res.setHeader("Cache-Control", "s-maxage=1800, stale-while-revalidate=86400");
+    // Five minutes, matching the panel's own refresh. The earlier half-hour with a
+    // day-long stale window was sized for GA4, which changes slowly — but the
+    // Airtable side of this answer changes the moment somebody fills in a URL, and
+    // a correction that takes 30 minutes to appear reads as a bug.
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
 
     return res.status(200).json({
       configured: true,
