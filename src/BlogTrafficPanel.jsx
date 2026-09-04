@@ -128,7 +128,7 @@ export default function BlogTrafficPanel() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
         <div style={{ fontWeight: 700, color: C }}>Blog traffic</div>
         <div style={{ fontSize: 10, color: MUTED }}>
-          from GA4 · last {windowDays} days to yesterday
+          from GA4 · last {windowDays} days, today included
         </div>
       </div>
 
