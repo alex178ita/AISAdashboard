@@ -95,6 +95,11 @@ export const FLOWS = [
   // Family B — LinkedIn ABM outreach (pink)
   { code: "B0",  family: "B", name: "Ingestion — PhantomBuster search → Sheet", scenarioId: "6676757", status: "active",  makeUrl: `${MAKE_BASE}/6676757/edit` },
   { code: "B1",  family: "B", name: "CRM dedup → Lemlist connection invite",    scenarioId: "6513141", status: "active",  makeUrl: `${MAKE_BASE}/6513141/edit` },
+  // B4clean runs at 07:15, before B3 refills the queue, so Family B is listed in
+  // execution order rather than alphabetically. It was collected by K1 from
+  // 15/08 but never declared here, so it had run statistics and nowhere to show
+  // them — the mirror image of the C2d case, and invisible for the same reason.
+  { code: "B4c", family: "B", name: "B4clean — expire to_scrape after 14 days",  scenarioId: "6760220", status: "active",  makeUrl: `${MAKE_BASE}/6760220/edit` },
   { code: "B3",  family: "B", name: "Housekeeping & KPI — acceptances",         scenarioId: "6543270", status: "active",  makeUrl: `${MAKE_BASE}/6543270/edit` },
   { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
   { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },
@@ -130,6 +135,10 @@ export const SERVICE_FLOWS = [
   { code: "K5", name: "Redemption attribution engine",    scenarioId: "6951866", status: "active", makeUrl: `${MAKE_BASE}/6951866/edit` },
   { code: "R1", name: "WordPress sign-ups → Registrations", scenarioId: "6919928", status: "active", makeUrl: `${MAKE_BASE}/6919928/edit` },
   { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
+  // The relay carries every alert the system sends into the Cliq channel. If it
+  // stops, the alerts stop and the channel simply goes quiet — and a quiet
+  // channel is what a good day looks like, which is why it needs a card.
+  { code: "Relay", name: "Cliq relay — webhook → alerts channel", scenarioId: "7169345", status: "active", makeUrl: `${MAKE_BASE}/7169345/edit` },
   { code: "MD", name: "Markdown consolidator",            scenarioId: "6440510", status: "standby", makeUrl: `${MAKE_BASE}/6440510/edit` },
 ];
 
