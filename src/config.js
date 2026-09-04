@@ -108,6 +108,13 @@ export const FLOWS = [
   { code: "C2a", family: "C", name: "Topic radar → Airtable Ideas",             scenarioId: "6871616", status: "active", makeUrl: `${MAKE_BASE}/6871616/edit`, detail: { label: "Open the editorial base", url: "airtableBase" } },
   { code: "C2b", family: "C", name: "Blog writer → WordPress draft",            scenarioId: "6864777", status: "active", makeUrl: `${MAKE_BASE}/6864777/edit` },
   { code: "C2c", family: "C", name: "Publisher — approved → live",              scenarioId: "6871324", status: "active", makeUrl: `${MAKE_BASE}/6871324/edit`, detail: { label: "See the blog", url: "blogSection" } },
+  // C2d repairs what C2c cannot reach. C2c only ever picks up records in
+  // Status = "Approvato" and writes the status itself, so an article that reaches
+  // "Pubblicato" by any other route — published by hand, or a run that stopped
+  // before the writeback — keeps its WP_Public_URL and Published_At empty and
+  // nothing will ever retry it. Without a URL the article is also invisible to
+  // the Blog traffic panel, which attributes GA4 views by page path.
+  { code: "C2d", family: "C", name: "Backfill — public URL & date",             scenarioId: "7225512", status: "active", makeUrl: `${MAKE_BASE}/7225512/edit`, detail: { label: "Open the editorial base", url: "airtableBase" } },
   // Family D — not yet available (amber)
   { code: "D1", family: "D", name: "Not yet available", placeholder: true },
   { code: "D2", family: "D", name: "Not yet available", placeholder: true },

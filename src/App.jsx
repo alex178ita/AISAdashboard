@@ -446,7 +446,7 @@ export default function App() {
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" color={FAMILY.A.color} runs={statsFor(runsF, "6446272")} />
             <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="daily chain 02:00–10:00" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" color={FAMILY.C.color} runs={statsFor(runsF, "6359563")} />
-            <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h" color={FAMILY.C.color} runs={statsFor(runsF, ["6871616", "6864777", "6871324"])} />
+            <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h · backfill 07:30" color={FAMILY.C.color} runs={statsFor(runsF, ["6871616", "6864777", "6871324", "7225512"])} />
           </div>
         </div>
 

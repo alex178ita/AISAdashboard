@@ -22,7 +22,7 @@ const DOCS = [
 const COMPONENTS = [
   { code: "A", color: "#2FB980", title: "Family A — AISA Audit & Outreach", desc: "The audit-on-sign-up webhook (A1) and the cold-outreach email engine (A2) that emails prospects a Firecrawl-based AI readiness audit." },
   { code: "B", color: "#E6568F", title: "Family B — LinkedIn (Account-Based Marketing)", desc: "The full LinkedIn account-based sequence: PhantomBuster ingestion, CRM dedup, connection invites, the Claude DM writer with review gate, sending and reply alerting." },
-  { code: "C", color: "#5B63D3", title: "Family C — Content Generation", desc: "The social writer (C1) into Zoho Social and the blog pipeline (C2): topic radar, blog writer to WordPress draft, and the approve-to-live publisher." },
+  { code: "C", color: "#5B63D3", title: "Family C — Content Generation", desc: "The social writer (C1) into Zoho Social and the blog pipeline (C2): topic radar, blog writer to WordPress draft, the approve-to-live publisher, and the daily backfill that repairs articles published outside the flow." },
   { code: "MD", color: "#8A94A6", title: "MD Consolidator", desc: "The service flow that consolidates the automation’s Markdown outputs — the shared documentation and content substrate the other flows draw on." },
   { code: "K", color: "#8A94A6", title: "Service collectors (K1–K5)", desc: "The KPI collectors (Make + Firecrawl, ZeptoMail events, Campaigns stats), plus K5, the deterministic redemption-attribution engine feeding the KPIs page." },
   { code: "DASH", color: "#12151A", title: "This dashboard", desc: "The React/Vercel front end you are reading now: flow status and run metrics, redemption KPIs, statistical graphs and this documentation hub — refreshed from the published KPI-log tabs." },
