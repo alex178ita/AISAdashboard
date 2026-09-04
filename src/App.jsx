@@ -443,7 +443,7 @@ export default function App() {
         <div style={{ background: T.ink, borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
             <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" color={FAMILY.A.color} runs={statsFor(runsF, "6350489")} />
-            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Mon–Fri 09:30–18:00" color={FAMILY.A.color} runs={statsFor(runsF, "6446272")} />
+            <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Tue–Fri 09:30–18:00" color={FAMILY.A.color} runs={statsFor(runsF, "6446272")} />
             <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="daily chain 02:00–10:00" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" color={FAMILY.C.color} runs={statsFor(runsF, "6359563")} />
             <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h · backfill 07:30" color={FAMILY.C.color} runs={statsFor(runsF, ["6871616", "6864777", "6871324", "7225512"])} />
