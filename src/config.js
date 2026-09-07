@@ -94,19 +94,19 @@ export const FLOWS = [
   { code: "A2", family: "A", name: "Cold outreach email",             scenarioId: "6446272", status: "active", makeUrl: `${MAKE_BASE}/6446272/edit`, detail: { label: "See details in Zoho Campaigns", url: "campaignsReport" } },
   // Family B — LinkedIn ABM outreach (pink)
   { code: "B0",  family: "B", name: "Ingestion — PhantomBuster search → Sheet", scenarioId: "6676757", status: "active",  makeUrl: `${MAKE_BASE}/6676757/edit` },
-  { code: "B1",  family: "B", name: "CRM dedup → Lemlist connection invite",    scenarioId: "6513141", status: "active",  makeUrl: `${MAKE_BASE}/6513141/edit` },
+  { code: "B1",  family: "B", name: "CRM dedup → Lemlist connection invite",    scenarioId: "6513141", status: "standby",  makeUrl: `${MAKE_BASE}/6513141/edit` },
   // B4clean runs at 07:15, before B3 refills the queue, so Family B is listed in
   // execution order rather than alphabetically. It was collected by K1 from
   // 15/08 but never declared here, so it had run statistics and nowhere to show
   // them — the mirror image of the C2d case, and invisible for the same reason.
-  { code: "B4c", family: "B", name: "B4clean — expire to_scrape after 14 days",  scenarioId: "6760220", status: "active",  makeUrl: `${MAKE_BASE}/6760220/edit` },
+  { code: "B4c", family: "B", name: "B4clean — expire to_scrape after 14 days",  scenarioId: "6760220", status: "standby",  makeUrl: `${MAKE_BASE}/6760220/edit` },
   { code: "B3",  family: "B", name: "Housekeeping & KPI — acceptances",         scenarioId: "6543270", status: "active",  makeUrl: `${MAKE_BASE}/6543270/edit` },
   { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
   { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },
   { code: "Bg",  family: "B", name: "B-guard — skip already-messaged",          scenarioId: "6745694", status: "active",  makeUrl: `${MAKE_BASE}/6745694/edit` },
-  { code: "B2",  family: "B", name: "DM writer (Claude) → DM_Log · skip_no_hook", scenarioId: "6513152", status: "active",  makeUrl: `${MAKE_BASE}/6513152/edit` },
-  { code: "B2s", family: "B", name: "DM send (Message Sender)",                 scenarioId: "6698916", status: "active",  makeUrl: `${MAKE_BASE}/6698916/edit` },
-  { code: "B2c", family: "B", name: "B2-cleanup — receipt gate + rollback",     scenarioId: "6729475", status: "active",  makeUrl: `${MAKE_BASE}/6729475/edit` },
+  { code: "B2",  family: "B", name: "DM writer (Claude) → DM_Log · skip_no_hook", scenarioId: "6513152", status: "standby",  makeUrl: `${MAKE_BASE}/6513152/edit` },
+  { code: "B2s", family: "B", name: "DM send (Message Sender)",                 scenarioId: "6698916", status: "standby",  makeUrl: `${MAKE_BASE}/6698916/edit` },
+  { code: "B2c", family: "B", name: "B2-cleanup — receipt gate + rollback",     scenarioId: "6729475", status: "standby",  makeUrl: `${MAKE_BASE}/6729475/edit` },
   { code: "B5",  family: "B", name: "Reply alert → Gmail + Cliq",               scenarioId: "6731586", status: "active",  makeUrl: `${MAKE_BASE}/6731586/edit` },
   // Family C — content generation (indigo)
   { code: "C1",  family: "C", name: "Social writer → Zoho Social",              scenarioId: "6359563", status: "active", makeUrl: `${MAKE_BASE}/6359563/edit` },
@@ -134,7 +134,7 @@ export const SERVICE_FLOWS = [
   { code: "K4A2", name: "Sent-A2 + engagement → attribution", scenarioId: "6936993", status: "active", makeUrl: `${MAKE_BASE}/6936993/edit` },
   { code: "K5", name: "Redemption attribution engine",    scenarioId: "6951866", status: "active", makeUrl: `${MAKE_BASE}/6951866/edit` },
   { code: "R1", name: "WordPress sign-ups → Registrations", scenarioId: "6919928", status: "active", makeUrl: `${MAKE_BASE}/6919928/edit` },
-  { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "active", makeUrl: `${MAKE_BASE}/6697179/edit` },
+  { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "standby", makeUrl: `${MAKE_BASE}/6697179/edit` },
   // The relay carries every alert the system sends into the Cliq channel. If it
   // stops, the alerts stop and the channel simply goes quiet — and a quiet
   // channel is what a good day looks like, which is why it needs a card.
