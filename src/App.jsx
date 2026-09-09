@@ -8,6 +8,7 @@ import BlogTrafficPanel from "./BlogTrafficPanel.jsx";
 import Charts from "./Charts.jsx";
 import Redemption from "./Redemption.jsx";
 import Docs from "./Docs.jsx";
+import Ga4 from "./Ga4.jsx";
 import { NavBar, PageActions } from "./shared.jsx";
 import { FamilyIcon, GearIcon, ActivityIcon } from "./icons.jsx";
 
@@ -411,6 +412,7 @@ export default function App() {
   if (route.startsWith("#/charts")) return <Charts />;
   if (route.startsWith("#/kpis")) return <Redemption />;
   if (route.startsWith("#/docs")) return <Docs />;
+  if (route.startsWith("#/ga4")) return <Ga4 />;
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.ink }}>

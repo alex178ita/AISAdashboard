@@ -39,6 +39,14 @@ export const B_MASTER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-
 // verifiable hook; those people are a real loss and stay in the accepted total.
 export const B_FUNNEL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2QNJv9wz9vGSFh_VioH1mo8XFWo_CFwnqpONPMOGZ1OA0kC4sax4PEFL8SZWKzqEZJmR4HM_wiLXL/pub?gid=664403748&single=true&output=csv"; // KPI_Log tab (AISA_Flusso_B_Fogli), published CSV
 
+// The very same published tab, under the name that says what it is rather than
+// what Family B uses it for. K6 writes li_post_stats rows into KPI_Log — one per
+// LinkedIn page post per run — and the GA4 & LinkedIn page reads them from here.
+// Two exports for one URL is deliberate: if the B funnel ever moves to its own
+// tab, only one of the two has to change, and neither reader has to know about
+// the other.
+export const KPI_LOG_CSV_URL = B_FUNNEL_CSV_URL;
+
 // Flow C2 — blog editorial KPIs (Airtable "AISA Blog Editorial").
 // Unlike every other source here, these are STATES, not events: how many ideas are queued,
 // how many drafts await review, how many articles went live. A published CSV is therefore
@@ -57,6 +65,11 @@ export const BLOG_KPI_URL = "/api/blog-kpi";
 // exist the route answers { configured: false } and the panel stays hidden.
 // Leave this empty to remove the panel entirely.
 export const BLOG_GA4_URL = "/api/blog-ga4";
+
+// Site-wide GA4 figures for the #/ga4 tab. Same service account and the same
+// three environment variables as blog-ga4; a separate route so the article
+// panel cannot break when this tab changes.
+export const GA4_OVERVIEW_URL = "/api/ga4-overview";
 
 // Auto-refresh (minutes)
 export const REFRESH_MINUTES = 5;
@@ -84,6 +97,7 @@ export const NAV = [
   { key: "#/kpis",   label: "Redemption KPIs" },
   { key: "#/docs",   label: "Full Tech & User Documentation" },
   { key: "#/charts", label: "Statistical graphs over time" },
+  { key: "#/ga4",    label: "GA4 & LinkedIn Stats" },
 ];
 
 // Flow registry — the backbone of the layout.
@@ -135,6 +149,14 @@ export const SERVICE_FLOWS = [
   { code: "K5", name: "Redemption attribution engine",    scenarioId: "6951866", status: "active", makeUrl: `${MAKE_BASE}/6951866/edit` },
   { code: "R1", name: "WordPress sign-ups → Registrations", scenarioId: "6919928", status: "active", makeUrl: `${MAKE_BASE}/6919928/edit` },
   { code: "B4l", name: "B — launch Activity + Profile",   scenarioId: "6697179", status: "standby", makeUrl: `${MAKE_BASE}/6697179/edit` },
+  // K6 collects the organic statistics of the AISA company page's own posts —
+  // impressions, clicks, reactions, comments — through LinkedIn's official API.
+  // That is OAuth on a page we administer, and has nothing to do with the
+  // browser session the Family B automation runs on: it is not affected by the
+  // rest that family is currently under. Live since 09/09/2026, daily at 06:47;
+  // it writes li_post_stats rows into KPI_Log, one per post per run, so the same
+  // post reappears each day with its impressions grown. K1 collects it (v1.6).
+  { code: "K6", name: "LinkedIn page stats (AISA) → KPI Log", scenarioId: "7319114", status: "active", makeUrl: `${MAKE_BASE}/7319114/edit` },
   // The relay carries every alert the system sends into the Cliq channel. If it
   // stops, the alerts stop and the channel simply goes quiet — and a quiet
   // channel is what a good day looks like, which is why it needs a card.
