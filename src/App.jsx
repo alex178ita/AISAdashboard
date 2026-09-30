@@ -446,19 +446,14 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
             <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" color={FAMILY.A.color} runs={statsFor(runsF, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Tue–Fri 09:30–18:00" color={FAMILY.A.color} runs={statsFor(runsF, "6446272")} />
-            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="standby" note="at rest since 08/09 — LinkedIn sessions" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
+            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="daily chain 03:00–10:00 · live again since 26/09" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" color={FAMILY.C.color} runs={statsFor(runsF, "6359563")} />
             <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h · backfill 07:30" color={FAMILY.C.color} runs={statsFor(runsF, ["6871616", "6864777", "6871324", "7225512"])} />
           </div>
-          {/* Temporary notice, to be removed when Family B resumes. The recap row
-              above can only say "standby"; a family stopped on purpose, for a reason
-              that will not be obvious in a month, needs the reason next to it. */}
-          <div style={{ marginTop: 13, paddingTop: 11, borderTop: "1px solid #FFFFFF22", fontFamily: T.mono, fontSize: 11.8, lineHeight: 1.5, color: "#C9CFD8" }}>
-            <span style={{ color: STATUS.standby.dot, fontWeight: 700 }}>Family B is deliberately at rest since 08/09/2026.</span>{" "}
-            LinkedIn repeatedly ended the sessions the automation runs on, and each reconnection held for less time than the one before.
-            Invites, DM writing, sending and scraping are stopped; the drafted DMs are held in <code>DM_Log</code> and nothing is being lost.
-            The reply alert stays on, so replies still arrive.
-          </div>
+          {/* Family B came back online on 26/09/2026: the LinkedIn connection no
+              longer runs on a session cookie but on a login, so the sessions stop
+              expiring. The standby notice that used to sit here has been removed.
+              A1 is the only deliberate pause left, and its own row states it. */}
         </div>
 
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
