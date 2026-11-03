@@ -108,12 +108,17 @@ export const FLOWS = [
   { code: "A2", family: "A", name: "Cold outreach email",             scenarioId: "6446272", status: "active", makeUrl: `${MAKE_BASE}/6446272/edit`, detail: { label: "See details in Zoho Campaigns", url: "campaignsReport" } },
   // Family B — LinkedIn ABM outreach (pink)
   { code: "B0",  family: "B", name: "Ingestion — PhantomBuster search → Sheet", scenarioId: "6676757", status: "active",  makeUrl: `${MAKE_BASE}/6676757/edit` },
-  { code: "B1",  family: "B", name: "CRM dedup → Lemlist connection invite",    scenarioId: "6513141", status: "active",  makeUrl: `${MAKE_BASE}/6513141/edit` },
+  // B1 and B4clean are held off after the restart of 03/11/2026 and say so here.
+  // B1: Lemlist is draining a backlog of pending invites, so enrolling fifteen
+  // more leads a day would only lengthen the queue while marking them invited.
+  // B4clean: the seven rows accepted on 30/10 must be scraped before anything is
+  // allowed to expire them. Both go back to "active" when they are switched on.
+  { code: "B1",  family: "B", name: "CRM dedup → Lemlist connection invite",    scenarioId: "6513141", status: "standby",  makeUrl: `${MAKE_BASE}/6513141/edit` },
   // B4clean runs at 07:15, before B3 refills the queue, so Family B is listed in
   // execution order rather than alphabetically. It was collected by K1 from
   // 15/08 but never declared here, so it had run statistics and nowhere to show
   // them — the mirror image of the C2d case, and invisible for the same reason.
-  { code: "B4c", family: "B", name: "B4clean — expire to_scrape after 14 days",  scenarioId: "6760220", status: "active",  makeUrl: `${MAKE_BASE}/6760220/edit` },
+  { code: "B4c", family: "B", name: "B4clean — expire to_scrape after 14 days",  scenarioId: "6760220", status: "standby",  makeUrl: `${MAKE_BASE}/6760220/edit` },
   { code: "B3",  family: "B", name: "Housekeeping & KPI — acceptances",         scenarioId: "6543270", status: "active",  makeUrl: `${MAKE_BASE}/6543270/edit` },
   { code: "B4",  family: "B", name: "Activity Extractor → scraped",             scenarioId: "6696522", status: "active",  makeUrl: `${MAKE_BASE}/6696522/edit` },
   { code: "B4b", family: "B", name: "Profile Scraper → About",                  scenarioId: "6697349", status: "active",  makeUrl: `${MAKE_BASE}/6697349/edit` },

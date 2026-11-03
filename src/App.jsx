@@ -446,14 +446,21 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
             <RecapItem name="A1 · Webhook on sign-up" status="standby" note="paused — pending AISA vs flow score coherence check" color={FAMILY.A.color} runs={statsFor(runsF, "6350489")} />
             <RecapItem name="A2 · Cold outreach" status="active" note="hourly · Tue–Fri 09:30–18:00" color={FAMILY.A.color} runs={statsFor(runsF, "6446272")} />
-            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="daily chain 03:00–10:00 · live again since 26/09" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6731586"])} />
+            <RecapItem name="B · LinkedIn (Account-Based Marketing)" status="active" note="daily chain 03:00–10:00 · restarted 03/11 · B1 and B4clean held, see their rows" color={FAMILY.B.color} runs={statsFor(runsF, ["6676757", "6513141", "6543270", "6697179", "6696522", "6697349", "6745694", "6513152", "6698916", "6729475", "6760220", "6731586"])} />
             <RecapItem name="C1 · Social Writer" status="active" note="4 posts/week · Mon/Wed/Thu 15:00 · Tue 09:30" color={FAMILY.C.color} runs={statsFor(runsF, "6359563")} />
             <RecapItem name="C2 · Blog Automation" status="active" note="2 articles/week · Tue &amp; Thu 09:00 · publisher every 2h · backfill 07:30" color={FAMILY.C.color} runs={statsFor(runsF, ["6871616", "6864777", "6871324", "7225512"])} />
           </div>
-          {/* Family B came back online on 26/09/2026: the LinkedIn connection no
-              longer runs on a session cookie but on a login, so the sessions stop
-              expiring. The standby notice that used to sit here has been removed.
-              A1 is the only deliberate pause left, and its own row states it. */}
+          {/* Family B came back online on 26/09/2026, and the LinkedIn connection
+              was moved from a pasted session cookie to the login flow. The note
+              that used to sit here said that this made the sessions stop expiring.
+              That was a hope, not a measurement, and it is now withdrawn: between
+              1 and 3/11/2026 the whole family was stopped again — not because a
+              session expired, but because the LinkedIn account itself was
+              suspended pending verification after repeated failed captchas at
+              login. The chain was restarted on 03/11 with B1 and B4clean held off.
+              What is true of the login method is only that it needs no cookie
+              pasted by hand; nothing about it protects the account.
+              A1 is the other deliberate pause, and its own row states it. */}
         </div>
 
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 20, padding: "12px 16px", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10 }}>
